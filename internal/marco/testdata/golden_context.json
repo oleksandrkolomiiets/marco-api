@@ -1,0 +1,73 @@
+{
+  "context": {
+    "user": {
+      "name": "Joost",
+      "level": "beginner",
+      "hand": "right",
+      "side": "right",
+      "frequency": "2x/week",
+      "top_goal": "improve net game"
+    },
+    "progress": {
+      "completed": [
+        "forehand-drive"
+      ],
+      "in_progress": "ready-position",
+      "mastered": [
+        "volley-intro"
+      ]
+    },
+    "goals": [
+      "improve net positioning",
+      "win more points at net"
+    ],
+    "last_match": {
+      "played": true,
+      "result": "lost",
+      "feeling": "frustrated",
+      "note": "kept missing volleys at the net"
+    },
+    "available_lessons": [
+      {
+        "slug": "volley-intro",
+        "title": "Volley Intro",
+        "level": "beginner"
+      },
+      {
+        "slug": "forehand-drive",
+        "title": "Forehand Drive",
+        "level": "beginner"
+      },
+      {
+        "slug": "ready-position",
+        "title": "Ready Position",
+        "level": "beginner"
+      }
+    ],
+    "upcoming_preparations": [
+      {
+        "id": "55555555-5555-5555-5555-555555555501",
+        "scheduled_at": "2099-01-15T18:00:00Z",
+        "opponents": [
+          "Lucia",
+          "Pablo"
+        ],
+        "partner_name": "Tom",
+        "court": "Court 2",
+        "note": "Right knee a bit stiff — go easy on lateral drills.",
+        "preparation_pct": 0
+      }
+    ],
+    "today": "2026-01-01"
+  },
+  "messages": [
+    {
+      "Role": "user",
+      "Content": "Hi Marco, can you help me?"
+    },
+    {
+      "Role": "assistant",
+      "Content": "Vamos! What do you want to work on?"
+    }
+  ]
+}

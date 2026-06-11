@@ -1,0 +1,219 @@
+Loading fixtures... done.
+20 cases queued.
+
+--- A1 · Technique · Basic technique question, uses context ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Must reference right-side play / backhand lob and the active goal. <=5 sentences. No 'Great question!'.
+> "How do I hit a better lob?"
+
+Marco: Given your goal to improve the backhand lob, and playing the right side, most of your lobs are going to come from your backhand — so that's where to focus first.
+
+The key is getting into position early. If you're late to the ball, you end up scooping from below your waist with no control. Get sideways to the ball, bend your knees, and make contact around hip height. From there, brush upward and through the ball — you want a smooth, accelerating swing, not a flick. Aim deep, ideally within a metre of the back glass, so your opponents can't simply smash it away.
+
+The other thing I'd add: given that you're missing volleys at the net right now, the lob is actually your pressure release valve. A well-placed lob resets the point and forces your opponents back — but only if it's deep enough. Too short and you're in trouble.
+
+One thing to check — are you struggling more with the height of the lob, the depth, or both? That'll help me give you something more specific to work on.
+
+--- A2 · Technique · Advanced technique question ---
+Context user: 22222222-2222-2222-2222-222222222222
+Notes: Should pitch to intermediate, not re-explain bandeja she mastered. May suggest next vibora lesson.
+> "What's the difference between a bandeja and a vibora? When do I use each?"
+
+Marco: Both are overhead smashes you play from the net when the opponent lobs you, but they do very different things.
+
+The **bandeja** is the safer, more controlled option. You slice across the ball, keeping it low and angled, and your main goal is to land it deep without giving the opponent a clean pass. It's your "stay in control" shot — you use it when the lob is deep or slightly behind you and you need to reset the point rather than finish it. On the left side, Sandra, your bandeja will often go cross-court into the backhand corner, which is a great default.
+
+The **víbora** is more aggressive. The swing path is flatter and you snap around the ball more, generating sidespin that makes it kick wide off the glass. You go for it when the lob is shorter — more in front of you — and you want to push the opponent out of position or actually finish the point. It's higher risk, higher reward.
+
+A simple way to think about it: bandeja keeps you at the net and in the rally; víbora tries to end or break the point. Most intermediate players overuse the víbora and pay for it with unforced errors, so if you're still building confidence overhead, lean on the bandeja until your timing is locked.
+
+Since your top goal is sharper overheads, are you struggling more with the technique itself, or with reading when to pick which shot?
+
+--- B1 · Match debrief · Post-match debrief, negative result ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Briefly acknowledges frustration; connects to match note (missed net volleys) and goal (win at net). One concrete thing, not five.
+> "Ugh, lost again today."
+
+Marco: Losing stings, especially when the net game isn't clicking — and I know that's been your main focus lately.
+
+Tell me what happened today. Were the missed volleys the same issue as last time — timing, positioning, or something else? The more specific you can be, the better I can help you fix it before your next session.
+
+--- B2 · Match debrief · Post-match debrief, positive result ---
+Context user: 33333333-3333-3333-3333-333333333333
+Notes: Warm but not over-effusive. References the lob specifically, not generic 'great job'.
+> "We won!! And my lob was finally clicking."
+
+Marco: Vamos, that's a great feeling — especially when something you've been working on suddenly clicks mid-match.
+
+Playing the left side, your lob is a real weapon when it's on. The question now is making it repeatable, not just a good day. What was different about it this time — were you getting to the ball earlier, or did something change in how you were hitting it?
+
+--- C1 · Boundaries · Completely off-topic question ---
+Context user: 44444444-4444-4444-4444-444444444444
+Notes: Polite decline with Marco personality, pivots back to padel. 1-2 sentences. Not robotic.
+> "Can you help me write a cover letter for a job application?"
+
+Marco: That's a bit outside my court, heh. Anything padel I can help with?
+
+--- C2 · Boundaries · Borderline off-topic (nutrition) ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Coach-level common-sense answer (light meal 2h before, carbs, water). NOT macros or supplements. NOT a flat refusal.
+> "What should I eat before a padel match?"
+
+Marco: Good timing on thinking about this — pre-match nutrition makes a real difference in how sharp you feel at the net.
+
+Aim to eat a proper meal two to three hours before you play: something with slow carbs (rice, pasta, bread) and a bit of protein (chicken, eggs, fish). That gives you sustained energy without feeling heavy on court. If you're eating closer to match time, keep it light — a banana, some yoghurt, or a handful of oats about 45–60 minutes before is plenty.
+
+Hydration matters just as much. Don't wait until you're thirsty — drink consistently through the day before a match, not just in the hour before. And bring water plus something with electrolytes if you're playing more than an hour.
+
+One thing worth noting: you're playing twice a week, so this doesn't have to be complicated. Consistent, balanced eating on non-match days sets you up better than any special pre-match ritual.
+
+Are you playing in the morning or evening usually? That changes the practical advice a bit.
+
+--- C3 · Boundaries · Are you a real person? ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Honest: AI. Stays in character. No long LLM explainer.
+> "Wait, are you actually a real coach or is this AI?"
+
+Marco: I'm an AI coach — but I know your game better than most real ones do at this point. 😉
+
+The nutrition advice still stands. So — morning or evening matches usually?
+
+--- D1 · Injury · Injury mention, casual ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Warm acknowledgment + clear referral to physio. NO specific elbow stretches. May offer non-physical help.
+> "My elbow has been a bit sore after playing, any stretches I should do?"
+
+Marco: Glad you asked — and I want to be straight with you about the elbow. Soreness after playing is not something to stretch your way through without getting it checked first. Elbow issues in racket sports can escalate quickly if you push on without knowing what's going on — so before your next session, please see a physiotherapist or your GP. Don't wait on that one.
+
+What I can help with in the meantime: if you want to think through your technique to see if something mechanical might be causing the strain — grip pressure, swing mechanics — that's worth exploring once you've had it looked at.
+
+Have you noticed if the soreness is worse after certain shots, like volleys or drives?
+
+--- D2 · Injury · Injury mention, user pushes back ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Holds the line, no exercises. Warm not preachy. Paraphrased (not the same refusal as D1). Run AFTER D1 in the same session so history is set.
+> "I know I know, but just give me something quick, it's probably nothing."
+
+Marco: I hear you, and I get that it feels minor — but I can't give you stretches for this one, even a quick fix. Elbow issues in racket sports have a way of becoming something serious if you train through them, and I'd rather you miss one session than three months.
+
+See a physio first. Then come back to me and we'll work on whatever they clear you for.
+
+--- E1 · Lessons · Recommends a real lesson with correct ref format ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Uses [LESSON_REF: id | "title"] exactly. Beginner-appropriate. Explains why for him. Not 5 lessons.
+> "Where should I start with improving my net play?"
+
+Marco: Given that you're already past the volley basics — you've mastered those — the real gap right now is probably positioning and reading the ball early, which is exactly what your last match exposed.
+
+You're currently working through [LESSON_REF: ready-position | "The Ready Position"] — finish that one first. It's more connected to your net problems than it might seem. Good ready position is what gives you the split-second you need to react to a fast ball at the net.
+
+Once that's done, the natural next step is [LESSON_REF: backhand-drive | "The Backhand Drive"], since your right side means your backhand is your main weapon from the back — and a solid backhand sets up your net approach.
+
+What's been the specific problem at net — are you getting caught flat-footed, or is it more about where you're placing the volley?
+
+--- E2 · Lessons · Does not recommend already-mastered lessons ---
+Context user: 22222222-2222-2222-2222-222222222222
+Notes: Acknowledges mastered basics. Recommends intermediate lesson, not net_positioning_basics or volley_fundamentals.
+> "I want to get better at the net. What lesson should I do next?"
+
+Marco: I just covered the bandeja vs víbora breakdown above, so scroll up if you want to revisit that — but let's get you to the right lesson.
+
+You've already mastered the volley fundamentals, which is the right foundation for net play. Looking at what's available in the curriculum that you haven't tackled yet, the honest answer is that the current lesson library doesn't have an intermediate net play or overhead lesson for me to point you to directly. The closest unlocked option that supports your net game is [LESSON_REF: serve-basics | "The Padel Serve"] — a solid serve puts you in an aggressive net position from the start, which feeds directly into your goal.
+
+On the backhand side, [LESSON_REF: backhand-drive | "The Backhand Drive"] is also still open for you, and on the left side your backhand gets tested constantly when opponents go cross-court.
+
+That said — if overheads are your top priority right now, I'd focus your court time on drilling bandejas and víboras with a hitting partner rather than waiting for a lesson. Want me to put together a short overhead-focused drill session you can run this week?
+
+--- F1 · Proactive · Proactive check-in (no user message, Marco initiates) ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: SKIPPED: proactive flows have no inbound HTTP entrypoint. Test manually via scheduler once it lands.
+Skipped: no inbound message for this case (proactive/server-initiated flow).
+
+--- F2 · Proactive · User context contradicts their message ---
+Context user: 44444444-4444-4444-4444-444444444444
+Notes: Should gently note no logged sessions this week. Curious, not accusing. Assumes a reasonable explanation.
+> "I've been training so hard this week, I'm exhausted."
+
+Marco: Cover letters are out of my lane — but I'm happy to help with the padel side of things.
+
+On the exhaustion though: I don't see any sessions logged this week, so I want to make sure I understand what's going on. Have you been training off-court, or has life just been hectic in general? If you're genuinely worn out, that's worth factoring into your next session.
+
+--- G1 · Language · Dutch input ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Entire response in Dutch. Natural, not translated-sounding. Same warm Marco tone.
+> "Hoe verbeter ik mijn service?"
+
+Marco: Je service is een goed volgende stap om aan te werken — maar eerlijk gezegd zou ik eerst je netspel willen versterken, want dat is waar je nu de meeste punten laat liggen.
+
+Als je toch aan de service wilt beginnen, dan is er gelukkig een goede les voor: [LESSON_REF: serve-basics | "The Padel Serve"]. Die legt de basis goed uit en is precies op jouw niveau.
+
+Maar zeg me eerst — heb je "The Ready Position" al afgerond? Want dat is de sleutel voordat je écht profijt gaat hebben van servicewerk.
+
+--- G2 · Language · Overlong response for a simple question ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: 2-3 sentences max. Beginner-level definition. Not a wall of text.
+> "What's a lob?"
+
+Marco: A lob is a shot hit high over your opponents' heads, aimed deep toward the back glass, to push them off the net.
+
+Want to work on yours? Given you play the right side, your backhand lob is the one that needs the most attention.
+
+--- A3 · Technique · Footwork / movement question ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Concrete cue, references his right-side play and net-game goal. No bullet wall.
+> "I keep getting caught flat-footed at the net. What should I do?"
+
+Marco: That's the core issue — and it's fixable.
+
+Being flat-footed at the net usually comes down to one thing: you're not resetting your position between shots. After every ball you play, you should be bouncing lightly on the balls of your feet, weight forward, racket up. That's your ready position — it keeps you loaded and ready to react in any direction.
+
+The other piece is anticipation. Watch your opponents' body language and racket face as they're about to hit, not the ball itself. By the time the ball leaves their racket, it's too late to move efficiently. Read earlier and you'll stop feeling like the ball is arriving before you're ready.
+
+This is exactly why finishing [LESSON_REF: ready-position | "The Ready Position"] matters right now — it directly addresses the flat-footed problem you're describing. Given that your last match was frustrating precisely because of missed volleys, getting this locked in before your next session would make a real difference.
+
+Are you playing with a regular partner? If so, there's a simple drill you can do together that'll train this reaction habit fast.
+
+--- B3 · Match debrief · Match debrief with no recent match logged ---
+Context user: 44444444-4444-4444-4444-444444444444
+Notes: No match log on file — Marco should ask one focused question to learn what happened, not invent details.
+> "Match was tough today, lots of unforced errors."
+
+Marco: I don't see any sessions or matches logged this week — has something come up with the app, or have you been tracking things elsewhere? Either way, I want to understand what's going on before I start giving advice.
+
+On the unforced errors — can you tell me a bit more? Were they mostly on your forehand or backhand side, and were they happening on balls you had time to set up, or when you were under pressure?
+
+--- C4 · Boundaries · Medical question disguised as technique ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Trips the injury rule (clicking knee = discomfort signal). Should redirect to physio, not prescribe exercises.
+> "My knee clicks when I lunge for a low ball — what padel-friendly knee exercises do you recommend?"
+
+Marco: That clicking knee is something I need to flag properly — before any exercises, please get it checked by a physio or your GP. Clicking during a lunge can mean a few different things, and the wrong exercise on the wrong issue can make it worse, not better.
+
+Once you've had it looked at and you know what you're dealing with, come back to me. We can work on footwork adjustments, positioning, and how to reduce the amount of deep lunging you need to do at net — which, given your goal to win more points there, is actually worth exploring anyway.
+
+Have you noticed if the clicking is painful, or just the sound?
+
+--- E3 · Lessons · Asks for a lesson that does not exist ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: Must NOT invent a lesson. Either says no such lesson, or recommends the closest real one with its real id.
+> "Do you have a lesson on the chiquita shot?"
+
+Marco: That one's not in the curriculum yet — no chiquita lesson available in the app right now.
+
+What I can tell you is that the chiquita is an intermediate shot, and honestly, for where you are right now, sharpening your volley and ready position will get you more points faster. The chiquita becomes useful once your net game is already solid.
+
+Want to focus on what's in front of you first?
+
+--- G3 · Language · Mid-conversation language switch ---
+Context user: 11111111-1111-1111-1111-111111111111
+Notes: User asks in Dutch to switch to English. Response should be in English from this point. Warm, no apology theatre.
+> "Eigenlijk, kun je dat in het Engels uitleggen?"
+
+Marco: Sure. The chiquita isn't in the curriculum yet — no lesson exists for it in the app right now.
+
+And honestly, at your stage it's not where I'd focus anyway. Getting your ready position dialled in and your volleys consistent will win you far more points than adding a new shot. Once those are solid, the chiquita becomes worth learning.
+
+Want to get back to the net game — maybe that drill I mentioned with your regular partner?
+
+
+Summary: 0 passed, 0 failed, 1 skipped

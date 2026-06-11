@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: marco
+          POSTGRES_PASSWORD: marco
+          POSTGRES_DB: marco_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U marco -d marco_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://marco:marco@localhost:5432/marco_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needed on:" && echo "$unformatted" && exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Migrate test database
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+          migrate -path ./migrations -database "$TEST_DATABASE_URL" up
+
+      # -p 1 serializes packages: the DB-backed tests TRUNCATE the shared
+      # marco_test database and would wipe each other's fixtures in parallel.
+      - name: Test (unit + integration)
+        run: go test -race -p 1 ./...

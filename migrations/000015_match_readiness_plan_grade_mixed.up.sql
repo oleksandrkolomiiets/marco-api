@@ -1,0 +1,6 @@
+ALTER TABLE match_readiness
+    DROP CONSTRAINT match_readiness_plan_grade_check;
+
+ALTER TABLE match_readiness
+    ADD CONSTRAINT match_readiness_plan_grade_check
+    CHECK (plan_grade IN ('worked', 'mixed', 'missed'));

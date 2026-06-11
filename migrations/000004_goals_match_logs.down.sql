@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS match_logs;
+DROP TABLE IF EXISTS goals;
+ALTER TABLE users DROP COLUMN IF EXISTS injury_notes;
