@@ -1,0 +1,23 @@
+CLAUDE.md
+  s_ab8e6d841a526d::t_fb514793ff7f82 92
+internal/marco/token_fixtures_test.go
+  s_ab8e6d841a526d::t_0d938233d20720 1-59
+internal/marco/testdata/token_fixtures.json
+  s_ab8e6d841a526d::t_c7a38c7cdeec21 1-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8853a35ea9d1d7bff5550d71fbf77961af3a7134",
+  "prompts": {},
+  "sessions": {
+    "s_ab8e6d841a526d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2945ebf1-87f1-4b36-938d-0dfec0928402",
+        "model": "claude-fable-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
