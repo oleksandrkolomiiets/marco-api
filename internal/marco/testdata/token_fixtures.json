@@ -1,0 +1,135 @@
+{
+  "_readme": "Canonical test vectors for Marco's inline token grammar ([LESSON_REF: ...], [MATCH_LOG: ...], [MATCH_PREP: ...]). IDENTICAL copies live in marco-api (internal/marco/testdata/token_fixtures.json) and marco-app (src/components/chat/token_fixtures.json) — update BOTH together; each repo's CI runs its implementation against its copy. The grammar itself is defined in marco-api internal/marco/prompt.md; if the prompt changes the token shapes, these fixtures and both parsers must change with it. Rules for shared cases: tokens must be complete (unterminated tokens are a streaming-only state, covered by the app's prefix property) and lesson-ref titles must not have leading/trailing spaces inside the quotes (the TS parser trims them, the Go parser does not). clean_text is the expected text after removing every token and trimming the ends — interior double spaces left by token removal are preserved. match_log / match_prep are server-side parse expectations (null = no valid token; match_prep compares mode and id, last valid token wins).",
+  "cases": [
+    {
+      "name": "plain text without tokens",
+      "input": "Great bandeja today — keep it up!",
+      "clean_text": "Great bandeja today — keep it up!",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "lesson ref mid-sentence",
+      "input": "Try [LESSON_REF: bandeja-basics | \"Bandeja basics\"] tonight.",
+      "clean_text": "Try  tonight.",
+      "lesson_refs": [{ "id": "bandeja-basics", "title": "Bandeja basics" }],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "two lesson refs in order",
+      "input": "Start with [LESSON_REF: ready-position | \"Ready position\"] then [LESSON_REF: forehand-drive | \"Forehand drive\"].",
+      "clean_text": "Start with  then .",
+      "lesson_refs": [
+        { "id": "ready-position", "title": "Ready position" },
+        { "id": "forehand-drive", "title": "Forehand drive" }
+      ],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "underscore id and unicode title at start",
+      "input": "[LESSON_REF: vib_01 | \"Víbora intro\"] first.",
+      "clean_text": "first.",
+      "lesson_refs": [{ "id": "vib_01", "title": "Víbora intro" }],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "malformed lesson ref (unquoted title) is not parsed and stays in text",
+      "input": "See [LESSON_REF: missing-quotes | Bandeja] here.",
+      "clean_text": "See [LESSON_REF: missing-quotes | Bandeja] here.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "match log simple",
+      "input": "[MATCH_LOG: {\"result\":\"won\",\"played_on\":\"2026-06-10\"}] Nice win!",
+      "clean_text": "Nice win!",
+      "lesson_refs": [],
+      "match_log": { "result": "won", "played_on": "2026-06-10" },
+      "match_prep": null
+    },
+    {
+      "name": "match log with all fields and opponents",
+      "input": "Logged. [MATCH_LOG: {\"result\":\"lost\",\"played_on\":\"2026-06-09\",\"note\":\"4-6 4-6\",\"feeling\":\"frustrated\",\"partner_name\":\"Tom\",\"opponents\":[\"Lucia\",\"Pablo\"]}]",
+      "clean_text": "Logged.",
+      "lesson_refs": [],
+      "match_log": {
+        "result": "lost",
+        "played_on": "2026-06-09",
+        "note": "4-6 4-6",
+        "feeling": "frustrated",
+        "partner_name": "Tom",
+        "opponents": ["Lucia", "Pablo"]
+      },
+      "match_prep": null
+    },
+    {
+      "name": "match log with malformed JSON is stripped but not parsed",
+      "input": "[MATCH_LOG: {\"result\":won}] Saved.",
+      "clean_text": "Saved.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "match prep create with nested drills array",
+      "input": "[MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-12T18:00:00Z\",\"opponents\":[\"Lucia\",\"Pablo\"],\"drills\":[{\"title\":\"Bandeja ladder\",\"duration_seconds\":300}]}]\nQueue ready for Thursday.",
+      "clean_text": "Queue ready for Thursday.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": { "mode": "create", "id": "" }
+    },
+    {
+      "name": "match prep adjust with id",
+      "input": "Opening your prep. [MATCH_PREP: {\"mode\":\"adjust\",\"id\":\"55555555-5555-5555-5555-555555555501\"}]",
+      "clean_text": "Opening your prep.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": { "mode": "adjust", "id": "55555555-5555-5555-5555-555555555501" }
+    },
+    {
+      "name": "match prep with invalid mode is stripped but not parsed",
+      "input": "[MATCH_PREP: {\"mode\":\"delete\",\"id\":\"x\"}] Done.",
+      "clean_text": "Done.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": null
+    },
+    {
+      "name": "double prep emission — last valid token wins",
+      "input": "[MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-12T18:00:00Z\"}] and [MATCH_PREP: {\"mode\":\"adjust\",\"id\":\"abc\"}]",
+      "clean_text": "and",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": { "mode": "adjust", "id": "abc" }
+    },
+    {
+      "name": "all three token types in one message",
+      "input": "Good session! [LESSON_REF: net-play | \"Net play\"] [MATCH_LOG: {\"result\":\"won\",\"played_on\":\"2026-06-11\"}] [MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-13T19:00:00Z\"}] Rest tomorrow.",
+      "clean_text": "Good session!    Rest tomorrow.",
+      "lesson_refs": [{ "id": "net-play", "title": "Net play" }],
+      "match_log": { "result": "won", "played_on": "2026-06-11" },
+      "match_prep": { "mode": "create", "id": "" }
+    },
+    {
+      "name": "message that is only a token cleans to empty",
+      "input": "[MATCH_LOG: {\"result\":\"draw\",\"played_on\":\"2026-06-08\"}]",
+      "clean_text": "",
+      "lesson_refs": [],
+      "match_log": { "result": "draw", "played_on": "2026-06-08" },
+      "match_prep": null
+    },
+    {
+      "name": "ordinary brackets are not tokens",
+      "input": "Score was [6-4] — solid!",
+      "clean_text": "Score was [6-4] — solid!",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": null
+    }
+  ]
+}

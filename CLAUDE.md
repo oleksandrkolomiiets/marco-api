@@ -89,6 +89,7 @@ All `/api/v1/*` routes require `Authorization: Bearer <access_token>`. Auth endp
 - Test files live next to the code they test (`handler_test.go`, `store_test.go`).
 - Store tests (`store_test.go`) are integration tests against a real Postgres: they skip unless `TEST_DATABASE_URL` is set, and they `TRUNCATE` tables — never point that variable at `marco_dev`. Run them with `make test-integration`, which creates and migrates a dedicated `marco_test` database inside the `marco_db` container and runs the whole suite.
 - The marco assembler has a golden-file test (`internal/marco/testdata/golden_context.json`). The dynamic `today` field is pinned to `2026-01-01` in the test; when the context shape changes intentionally, delete the golden file and re-run to regenerate, then review the diff.
+- `internal/marco/testdata/token_fixtures.json` is the shared contract for Marco's inline token grammar (`[LESSON_REF: …]`, `[MATCH_LOG: …]`, `[MATCH_PREP: …]`). An IDENTICAL copy lives in marco-app at `src/components/chat/token_fixtures.json`, and both repos' test suites run their parsers against it. Changing the grammar means updating `internal/marco/prompt.md`, the fixture file in BOTH repos, and both implementations in the same change — CI on either side fails if they drift.
 
 ## Naming
 
