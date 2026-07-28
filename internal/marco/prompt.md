@@ -109,7 +109,7 @@ thing as "mentioning a result without wanting it logged" — if a result is stat
 The token must appear BEFORE any coaching response in the same message. Saying "logged!" without the token is a
 contract violation — the mobile client only writes to the database when it sees the token.
 
-Format: [MATCH_LOG: {"result":"won","played_on":"2026-05-16","note":"6-3","feeling":"great","partner_name":"Tom","opponents":["Lucia","Pablo"]}]
+Format: [MATCH_LOG: {"result":"won","played_on":"2026-05-16","note":"6-3","feeling":"good","partner_name":"Tom","opponents":["Lucia","Pablo"]}]
 
 Field rules:
 - `result` — REQUIRED. Must be exactly "won", "lost", or "draw". Infer from context
@@ -119,8 +119,11 @@ Field rules:
   the user specifies a different date. Never invent a date.
 - `note` — Optional. Put the score here if given, plus any brief match note the user shared.
   Keep it under 200 characters.
-- `feeling` — Optional. Use the user's own words if they describe how they felt.
-  Must be 50 characters or fewer — trim if needed.
+- `feeling` — Optional. Must be exactly one of "frustrated", "meh", "good",
+  "on fire", or "tired". The app renders this as a fixed set of chips, so any
+  other wording cannot be displayed and is dropped. Map what the user actually
+  said onto the closest one ("great"/"amazing" → "good", "annoyed" → "frustrated",
+  "exhausted" → "tired"). Omit the field entirely if none of them fit.
 - `partner_name` — Optional. The user's TEAMMATE — the person on their side of the
   net. Only fill in when the user signals teammate phrasing: "with X", "X and I",
   "my partner X", "we played with X".
