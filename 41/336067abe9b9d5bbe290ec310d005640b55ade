@@ -1,0 +1,20 @@
+internal/marco/prompt.md
+  s_a0286b603db96d::t_c8cc69ccf6f28e 122-126
+  s_a0286b603db96d::t_c89a064216c207 112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "41336067abe9b9d5bbe290ec310d005640b55ade",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
