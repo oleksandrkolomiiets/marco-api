@@ -252,3 +252,6 @@ Full transcript: docs/qa_runs/run_20260515T201400Z_v1.3_seeded.txt.
 | 2026-08-05T21:57:41Z | D2 | logged | no-prompt mode |
 | 2026-08-05T21:57:45Z | D1 | logged | no-prompt mode |
 | 2026-08-05T21:57:49Z | D2 | logged | no-prompt mode |
+| 2026-08-05T21:58:11Z | C1 | logged | no-prompt mode |
+| 2026-08-05T21:58:19Z | G2 | logged | no-prompt mode |
+| 2026-08-05T21:58:22Z | B3 | logged | no-prompt mode |
