@@ -258,6 +258,50 @@ func TestStore_GetHistory_BeforeCursorReturnsOlderPage(t *testing.T) {
 	}
 }
 
+// Both rows of a turn share one created_at, and `before` compares with a strict
+// `<` — so a page that ends between them would make the client's next request
+// skip the sibling it never saw. One reply-less turn is enough to put a 30-row
+// boundary mid-turn, so walk the whole history and demand every row exactly once.
+func TestStore_GetHistory_PaginationNeverSkipsASameTimestampSibling(t *testing.T) {
+	ctx := context.Background()
+	db := openStoreTestDB(t)
+	resetMessagesAndSeedUser(t, ctx, db)
+
+	userID := uuid.MustParse(storeFixtureUserID)
+	seedTurns(t, ctx, db, userID, 25) // 50 rows in 25 same-timestamp pairs
+
+	// A user message whose assistant reply was soft-deleted: the row count goes
+	// odd, so page boundaries stop lining up with turn boundaries.
+	_, err := db.Exec(ctx, `
+		INSERT INTO messages (user_id, role, content, lesson_refs, created_at)
+		VALUES ($1, 'user', 'reply was deleted', '[]'::jsonb, now())
+	`, userID)
+	require.NoError(t, err)
+
+	s := NewStore(db)
+
+	seen := map[uuid.UUID]bool{}
+	var cursor *time.Time
+	for page := 0; ; page++ {
+		require.Less(t, page, 20, "pagination must terminate")
+		msgs, hasMore, err := s.GetHistory(ctx, userID, 30, cursor)
+		require.NoError(t, err)
+		require.NotEmpty(t, msgs, "a page short of the root must return rows")
+		for _, m := range msgs {
+			require.False(t, seen[m.ID], "message %s came back twice", m.ID)
+			seen[m.ID] = true
+		}
+		if !hasMore {
+			break
+		}
+		// Response is ASC, so index 0 is the oldest row — the client's cursor.
+		oldest := msgs[0].CreatedAt
+		cursor = &oldest
+	}
+
+	assert.Len(t, seen, 51, "every message must appear exactly once across the walk")
+}
+
 func TestStore_GetHistory_LimitIsClampedToMax(t *testing.T) {
 	ctx := context.Background()
 	db := openStoreTestDB(t)

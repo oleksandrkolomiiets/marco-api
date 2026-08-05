@@ -169,7 +169,26 @@ func (s *Store) GetHistory(ctx context.Context, userID uuid.UUID, limit int, bef
 
 	hasMore := len(msgs) > limit
 	if hasMore {
+		// A turn writes its user and assistant rows in one transaction, so both
+		// carry the SAME created_at — and `before` is that timestamp compared
+		// with a strict `<`. If a page boundary lands between two rows sharing
+		// one timestamp, the client's next request excludes the sibling it never
+		// saw, and that message is gone from the history for good. (Even turn
+		// sizes don't save us: a single soft-deleted reply flips the parity of
+		// every older page.) When the row just past the page shares the last
+		// kept row's timestamp, end the page before that whole group and let it
+		// come back intact on the next one.
+		boundary := msgs[limit].CreatedAt
 		msgs = msgs[:limit]
+		cut := len(msgs)
+		for cut > 0 && msgs[cut-1].CreatedAt.Equal(boundary) {
+			cut--
+		}
+		// cut == 0 means the whole page sits on that one timestamp; keep it
+		// rather than returning nothing and stalling the scroll-back.
+		if cut > 0 {
+			msgs = msgs[:cut]
+		}
 	}
 
 	// Query is DESC for cursor pagination; flip to ASC so the response stays
