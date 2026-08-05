@@ -1,0 +1,29 @@
+internal/marco/lesson_refs.go
+  s_a0286b603db96d::t_c9d93b5a8509d0 29-33
+  s_a0286b603db96d::t_3ac3428b723145 18-21
+internal/marco/testdata/token_fixtures.json
+  s_a0286b603db96d::t_4fce9fc63f2f68 2,16-21,30-37,46-51,68-71,85-88,106-109,117-120,136-139,145-158,165-168,178-188
+internal/marco/prompt.md
+  s_a0286b603db96d::t_44e65c40455a29 48-49
+  s_a0286b603db96d::t_0627962d76a299 251,256,261
+  s_a0286b603db96d::t_16a30eba2fb54f 271
+  s_a0286b603db96d::t_22da995e63c053 244
+  s_a0286b603db96d::t_991c182718d92a 266
+  s_a0286b603db96d::t_f2eaa73aec6c79 179-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "29128d1912f82ecbfb18b4617eee992dd8e11cee",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
