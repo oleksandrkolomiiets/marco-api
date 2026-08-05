@@ -179,13 +179,27 @@ var Cases = []TestCase{
 		LangHint: "en",
 	},
 	{
-		ID: "H2", Group: "Match logging", Title: "Loss with partner name",
+		ID: "H2", Group: "Match logging", Title: "Loss with an opponent named",
 		UserUUID:    uuidJoost,
 		UserMessage: "Good evening, I just lost 3-6 versus Matvii",
-		Notes: "MUST emit [MATCH_LOG: {\"result\":\"lost\",\"played_on\":\"...\",\"note\":\"3-6\",\"partner_name\":\"Matvii\"}]. " +
-			"result must be \"lost\". partner_name must be \"Matvii\". " +
+		// The note used to demand partner_name:"Matvii" for a message that says
+		// "versus" — the opposite of what prompt.md's disambiguation rule says,
+		// so a correct answer read as a failure. H4 covers the partner side.
+		Notes: "MUST emit [MATCH_LOG: {\"result\":\"lost\",\"played_on\":\"...\",\"note\":\"3-6\",\"opponents\":[\"Matvii\"]}]. " +
+			"result must be \"lost\". \"versus X\" is opposition phrasing, so Matvii belongs in opponents[] — " +
+			"partner_name must be absent. " +
 			"This is the exact failure case from the 2026-05-16 screenshot where Marco said 'I can't log matches myself'. " +
-			"FAIL if: no token; redirects user to log manually; any mention of 'app' for logging.",
+			"FAIL if: no token; puts Matvii in partner_name; redirects user to log manually; any mention of 'app' for logging.",
+		LangHint: "en",
+	},
+	{
+		ID: "H4", Group: "Match logging", Title: "Win with a partner named",
+		UserUUID:    uuidJoost,
+		UserMessage: "Won 6-2 6-4 tonight, played with Sanne",
+		Notes: "The partner half of the disambiguation rule H2 covers for opponents. " +
+			"MUST emit [MATCH_LOG: {\"result\":\"won\",\"played_on\":\"...\",\"note\":\"6-2 6-4\",\"partner_name\":\"Sanne\"}]. " +
+			"\"played with X\" is teammate phrasing, so Sanne must be partner_name and opponents[] must be absent. " +
+			"FAIL if: no token; puts Sanne in opponents[]; invents opponents.",
 		LangHint: "en",
 	},
 	{

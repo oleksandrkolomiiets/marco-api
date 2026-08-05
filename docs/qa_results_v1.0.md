@@ -234,3 +234,11 @@ Full transcript: docs/qa_runs/run_20260515T201400Z_v1.3_seeded.txt.
 | 2026-08-05T21:48:25Z | I4 | logged | no-prompt mode |
 | 2026-08-05T21:49:51Z | I1 | logged | no-prompt mode |
 | 2026-08-05T21:49:54Z | I4 | logged | no-prompt mode |
+| 2026-08-05T21:52:46Z | C1 | logged | no-prompt mode |
+| 2026-08-05T21:52:52Z | C2 | logged | no-prompt mode |
+| 2026-08-05T21:52:56Z | C3 | logged | no-prompt mode |
+| 2026-08-05T21:53:00Z | C4 | logged | no-prompt mode |
+| 2026-08-05T21:53:18Z | H1 | logged | no-prompt mode |
+| 2026-08-05T21:53:21Z | H2 | logged | no-prompt mode |
+| 2026-08-05T21:53:23Z | H3 | logged | no-prompt mode |
+| 2026-08-05T21:54:17Z | H4 | logged | no-prompt mode |
