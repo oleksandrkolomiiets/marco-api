@@ -41,7 +41,12 @@ func (s *pgxStore) listQuestionsInternal(ctx context.Context, withCorrect bool) 
 	defer rows.Close()
 
 	out := make([]Question, 0, 20)
-	byID := make(map[uuid.UUID]*Question)
+	// Index, not *Question: appending past the initial capacity reallocates the
+	// backing array, which would leave stored pointers writing options into the
+	// old copy. It happens to be safe today only because the query is ordered by
+	// question, so a stale pointer is never dereferenced — one question added to
+	// the seed, or one ORDER BY change, and options start vanishing.
+	indexByID := make(map[uuid.UUID]int)
 	for rows.Next() {
 		var (
 			q Question
@@ -56,13 +61,12 @@ func (s *pgxStore) listQuestionsInternal(ctx context.Context, withCorrect bool) 
 		if !withCorrect {
 			o.IsCorrect = false
 		}
-		existing, ok := byID[q.ID]
-		if !ok {
+		if i, ok := indexByID[q.ID]; ok {
+			out[i].Options = append(out[i].Options, o)
+		} else {
 			q.Options = []Option{o}
 			out = append(out, q)
-			byID[q.ID] = &out[len(out)-1]
-		} else {
-			existing.Options = append(existing.Options, o)
+			indexByID[q.ID] = len(out) - 1
 		}
 	}
 	if err := rows.Err(); err != nil {

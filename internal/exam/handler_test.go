@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http/httptest"
 	"strings"
@@ -312,6 +313,28 @@ func TestSubmitAttempt_StoreError(t *testing.T) {
 
 	assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
 	assert.Equal(t, "internal server error", decodeError(t, resp.Body))
+}
+
+// A pick that names an option belonging to another question is bad input, so it
+// must not read as a server fault.
+func TestSubmitAttempt_ForeignOptionIsUnprocessable(t *testing.T) {
+	store := &stubStore{
+		submitErr: fmt.Errorf("%w: option %s, question %s",
+			ErrPickNotOnQuestion, uuid.New(), uuid.New()),
+	}
+	app := newApp(NewHandler(store), uuid.New())
+
+	req := httptest.NewRequest("POST", "/api/v1/exam/attempts", strings.NewReader(`{"answers":[]}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req, -1)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	assert.Equal(t, fiber.StatusUnprocessableEntity, resp.StatusCode)
+	assert.Equal(t,
+		"selected_option_id does not belong to its question",
+		decodeError(t, resp.Body))
 }
 
 // --- GetLatestAttempt ---

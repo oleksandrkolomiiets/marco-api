@@ -1,10 +1,16 @@
 package exam
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 )
+
+// ErrPickNotOnQuestion means the client submitted an option id that belongs to
+// a different question. It's bad input, not a server fault, so the handler
+// answers 422 rather than letting it fall through to a 500.
+var ErrPickNotOnQuestion = errors.New("selected option does not belong to the question")
 
 // gradedAnswer is the outcome of grading a single question on an attempt.
 // selectedOptionID is nil when the question was left unanswered.
@@ -54,7 +60,7 @@ func gradeAttempt(questions []Question, picks map[uuid.UUID]uuid.UUID) (gradeRes
 				}
 			}
 			if !belongs {
-				return gradeResult{}, fmt.Errorf("option %s does not belong to question %s", picked, q.ID)
+				return gradeResult{}, fmt.Errorf("%w: option %s, question %s", ErrPickNotOnQuestion, picked, q.ID)
 			}
 			sel = &picked
 			isCorrect = picked == correctID

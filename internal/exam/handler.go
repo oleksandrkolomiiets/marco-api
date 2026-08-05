@@ -73,6 +73,9 @@ func (h *Handler) SubmitAttempt(c *fiber.Ctx) error {
 
 	review, err := h.store.SubmitAttempt(c.Context(), userID, picks)
 	if err != nil {
+		if errors.Is(err, ErrPickNotOnQuestion) {
+			return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": "selected_option_id does not belong to its question"})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	return c.Status(fiber.StatusCreated).JSON(review)

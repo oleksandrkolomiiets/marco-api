@@ -159,8 +159,12 @@ func TestGradeAttempt_ForeignOptionIsRejected(t *testing.T) {
 
 			_, err := gradeAttempt(qs, picks)
 			require.Error(t, err)
+			// Sentinel, so the handler can answer 422 instead of 500; the ids
+			// stay in the message for the logs.
+			assert.ErrorIs(t, err, ErrPickNotOnQuestion)
 			assert.EqualError(t, err,
-				fmt.Sprintf("option %s does not belong to question %s", bad, qs[0].ID))
+				fmt.Sprintf("%s: option %s, question %s",
+					ErrPickNotOnQuestion, bad, qs[0].ID))
 		})
 	}
 }

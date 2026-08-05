@@ -3,6 +3,8 @@ package achievements
 import (
 	"fmt"
 	"time"
+
+	"marco-api/internal/exam"
 )
 
 // Achievement is one badge in the user's profile grid. It's a derived view —
@@ -101,10 +103,13 @@ var catalogue = []definition{
 		Target:      1,
 	},
 	{
-		Slug:        "padel-license",
-		Title:       "Padel rules license",
-		Description: "You scored above 80% on the padel rules exam. Officially: you know what a let, a fault, and a double-bounce off the wall actually mean.",
-		Criteria:    "Answer >80% of rules exam questions correctly.",
+		Slug:  "padel-license",
+		Title: "Padel rules license",
+		// The gate is the exam's own pass mark (exam.PassingScore), not a
+		// percentage of its own — the copy used to promise ">80%", which unlocks
+		// nothing at 17/20. Keep both strings derived from the constant.
+		Description: fmt.Sprintf("You passed the padel rules exam with %d or more correct. Officially: you know what a let, a fault, and a double-bounce off the wall actually mean.", exam.PassingScore),
+		Criteria:    fmt.Sprintf("Answer at least %d rules exam questions correctly.", exam.PassingScore),
 		Icon:        "L1",
 		Accent:      "teal",
 		Target:      1,
