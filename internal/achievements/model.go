@@ -194,14 +194,14 @@ func compute(s userStats) Summary {
 				a.Progress = 1
 			}
 			a.UnlockedAt = formatTime(s.FirstLessonAt)
-			a.ProgressLabel = fmt.Sprintf("%d lessons learned", s.LearnedCount)
+			a.ProgressLabel = countLabel(s.LearnedCount, "lesson", "lessons", "learned")
 		case "first-win":
 			a.Unlocked = s.WinCount >= 1
 			if a.Unlocked {
 				a.Progress = 1
 			}
 			a.UnlockedAt = formatTime(s.FirstWinAt)
-			a.ProgressLabel = fmt.Sprintf("%d wins logged", s.WinCount)
+			a.ProgressLabel = countLabel(s.WinCount, "win", "wins", "logged")
 		case "match-diarist":
 			a.Progress = clamp(s.MatchCount, d.Target)
 			a.Unlocked = s.MatchCount >= d.Target
@@ -300,6 +300,17 @@ func clamp(v, max int) int {
 		return max
 	}
 	return v
+}
+
+// countLabel renders "1 lesson learned" rather than "1 lessons learned". The
+// bare "%d lessons" form reads wrong at exactly the moment these achievements
+// tend to be looked at — right after the first one unlocks.
+func countLabel(n int, singular, plural, suffix string) string {
+	word := plural
+	if n == 1 {
+		word = singular
+	}
+	return fmt.Sprintf("%d %s %s", n, word, suffix)
 }
 
 func formatTime(t *time.Time) *string {

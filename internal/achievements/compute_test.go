@@ -84,7 +84,7 @@ func TestCompute_FirstLessonLearned(t *testing.T) {
 	assert.Equal(t, 1, a.Target)
 	require.NotNil(t, a.UnlockedAt)
 	assert.Equal(t, rfc(ts), *a.UnlockedAt)
-	assert.Equal(t, "1 lessons learned", a.ProgressLabel)
+	assert.Equal(t, "1 lesson learned", a.ProgressLabel)
 	assert.Equal(t, 1, got.Unlocked)
 }
 
@@ -203,7 +203,7 @@ func TestCompute_FirstWin(t *testing.T) {
 	a := get(t, got, "first-win")
 	assert.True(t, a.Unlocked)
 	assert.Equal(t, 1, a.Progress)
-	assert.Equal(t, "1 wins logged", a.ProgressLabel)
+	assert.Equal(t, "1 win logged", a.ProgressLabel)
 	require.NotNil(t, a.UnlockedAt)
 	assert.Equal(t, rfc(ts), *a.UnlockedAt)
 
@@ -426,4 +426,29 @@ func TestCompute_UnlockedAtIsNormalisedToUTC(t *testing.T) {
 	a := get(t, got, "first-win")
 	require.NotNil(t, a.UnlockedAt)
 	assert.Equal(t, "2026-06-01T10:30:00Z", *a.UnlockedAt)
+}
+
+// The bare "%d lessons"/"%d wins" formats read wrong at exactly the count these
+// achievements unlock on, which is when a player is most likely to open them.
+func TestCompute_CountLabelsUseSingularForOne(t *testing.T) {
+	tests := []struct {
+		name  string
+		stats userStats
+		slug  string
+		want  string
+	}{
+		{"zero lessons stays plural", userStats{LearnedCount: 0, PublishedLessonCount: 12}, "first-lesson", "0 lessons learned"},
+		{"one lesson is singular", userStats{HasLearnedLesson: true, LearnedCount: 1, PublishedLessonCount: 12}, "first-lesson", "1 lesson learned"},
+		{"two lessons is plural", userStats{HasLearnedLesson: true, LearnedCount: 2, PublishedLessonCount: 12}, "first-lesson", "2 lessons learned"},
+		{"zero wins stays plural", userStats{WinCount: 0}, "first-win", "0 wins logged"},
+		{"one win is singular", userStats{WinCount: 1}, "first-win", "1 win logged"},
+		{"three wins is plural", userStats{WinCount: 3}, "first-win", "3 wins logged"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := compute(tt.stats)
+			assert.Equal(t, tt.want, get(t, got, tt.slug).ProgressLabel)
+		})
+	}
 }
