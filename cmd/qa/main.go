@@ -152,6 +152,9 @@ func main() {
 
 	httpClient := &http.Client{Timeout: 120 * time.Second}
 	var passed, failed, skipped int
+	// Which cases actually ran, so a follow-up case can tell whether the turn it
+	// continues is present in this selection.
+	ran := map[string]bool{}
 
 	for _, c := range selected {
 		ui.header("--- %s · %s · %s ---", c.ID, c.Group, c.Title)
@@ -177,17 +180,24 @@ func main() {
 			appendResult(out, c, "fail", "internal: invalid uuid")
 			continue
 		}
-		// Every case is an independent probe, but /api/v1/chat persists each
-		// turn and the cases share fixture users — so case N+1 was answering
-		// case N's conversation. I4 opened with "Those are two separate things"
-		// and never emitted its token, because I1's question was still in the
-		// history it was handed.
-		if _, err := pool.Exec(ctx, `DELETE FROM messages WHERE user_id = $1`, uid); err != nil {
-			ui.errf("clear history for %s: %v", c.ID, err)
-			failed++
-			appendResult(out, c, "fail", "internal: clear history")
-			continue
+		// Most cases are independent probes, but /api/v1/chat persists each turn
+		// and the cases share fixture users — so case N+1 was answering case N's
+		// conversation. I4 opened with "Those are two separate things" and never
+		// emitted its token, because I1's question was still in the history it
+		// was handed. Clear it, except for the cases that are deliberately a
+		// second turn: those need the first one still there.
+		if c.FollowsUp == "" {
+			if _, err := pool.Exec(ctx, `DELETE FROM messages WHERE user_id = $1`, uid); err != nil {
+				ui.errf("clear history for %s: %v", c.ID, err)
+				failed++
+				appendResult(out, c, "fail", "internal: clear history")
+				continue
+			}
+		} else if !ran[c.FollowsUp] {
+			ui.warn("%s continues %s, which is not in this run — it will read as a non sequitur. Add %s to --filter.",
+				c.ID, c.FollowsUp, c.FollowsUp)
 		}
+		ran[c.ID] = true
 
 		token, err := jwtSvc.GenerateAccessToken(uid, "coach")
 		if err != nil {

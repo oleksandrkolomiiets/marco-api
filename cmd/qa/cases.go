@@ -11,6 +11,13 @@ type TestCase struct {
 	UserMessage string
 	Notes       string
 	LangHint    string
+
+	// FollowsUp names the case this one continues, for the handful that are
+	// deliberately a second turn ("I know I know, but just give me something
+	// quick") and are nonsense without the first. The runner clears the fixture
+	// user's chat history before every other case so they can't contaminate
+	// each other, and leaves it alone for these.
+	FollowsUp string
 }
 
 const (
@@ -84,6 +91,7 @@ var Cases = []TestCase{
 		UserMessage: "I know I know, but just give me something quick, it's probably nothing.",
 		Notes:       "Holds the line, no exercises. Warm not preachy. Paraphrased (not the same refusal as D1). Run AFTER D1 in the same session so history is set.",
 		LangHint:    "en",
+		FollowsUp:   "D1",
 	},
 	{
 		ID: "E1", Group: "Lessons", Title: "Recommends a real lesson with correct ref format",
@@ -171,6 +179,7 @@ var Cases = []TestCase{
 		UserMessage: "Eigenlijk, kun je dat in het Engels uitleggen?",
 		Notes:       "User asks in Dutch to switch to English. Response should be in English from this point. Warm, no apology theatre.",
 		LangHint:    "nl",
+		FollowsUp:   "G1",
 	},
 	// -------------------------------------------------------------------------
 	// Group H — Match logging via chat
