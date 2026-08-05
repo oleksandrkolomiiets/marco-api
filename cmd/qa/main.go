@@ -44,7 +44,7 @@ type flags struct {
 
 func parseFlags() flags {
 	var f flags
-	flag.StringVar(&f.baseURL, "base-url", "http://localhost:8080", "Base URL of the local marco-api server")
+	flag.StringVar(&f.baseURL, "base-url", "", "Base URL of the local marco-api server (default http://localhost:$PORT)")
 	flag.StringVar(&f.filter, "filter", "", "Comma-separated case IDs to run (e.g. A1,D1,D2). Empty = all.")
 	flag.BoolVar(&f.noPrompt, "no-prompt", false, "Skip the cost warning and the interactive pass/fail prompts (does NOT bypass the wipe guard)")
 	flag.StringVar(&f.output, "output", "docs/qa_results_v1.0.md", "Markdown file to append results to")
@@ -66,6 +66,15 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		fatal(ui, "load config: %v", err)
+	}
+
+	// The harness mints a real access token and posts the case message to
+	// baseURL. Hardcoding :8080 while this project serves on $PORT meant every
+	// run handed a signed JWT to whatever unrelated service happened to own
+	// 8080 — here, one that answers {"error":"Unauthenticated"} — and reported
+	// it as Marco failing the case.
+	if f.baseURL == "" {
+		f.baseURL = "http://localhost:" + cfg.Port
 	}
 
 	selected, err := filterCases(Cases, f.filter)
@@ -168,6 +177,18 @@ func main() {
 			appendResult(out, c, "fail", "internal: invalid uuid")
 			continue
 		}
+		// Every case is an independent probe, but /api/v1/chat persists each
+		// turn and the cases share fixture users — so case N+1 was answering
+		// case N's conversation. I4 opened with "Those are two separate things"
+		// and never emitted its token, because I1's question was still in the
+		// history it was handed.
+		if _, err := pool.Exec(ctx, `DELETE FROM messages WHERE user_id = $1`, uid); err != nil {
+			ui.errf("clear history for %s: %v", c.ID, err)
+			failed++
+			appendResult(out, c, "fail", "internal: clear history")
+			continue
+		}
+
 		token, err := jwtSvc.GenerateAccessToken(uid, "coach")
 		if err != nil {
 			ui.errf("mint token: %v", err)

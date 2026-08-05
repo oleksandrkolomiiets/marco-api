@@ -74,7 +74,16 @@ INSERT INTO match_preparation (id, user_id, scheduled_at, opponents, partner_nam
   (
     '99999999-9999-9999-9999-999999999901',
     '11111111-1111-1111-1111-111111111111',
-    date_trunc('day', NOW()) + (((4 - EXTRACT(DOW FROM NOW())::int + 6) % 7) + 1) * INTERVAL '1 day' + INTERVAL '20 hours',
+    -- "Next Thursday", forced at least two days out. The naive next-Thursday
+    -- lands on tomorrow when today is Wednesday, colliding with the Clara prep
+    -- below: I1 ("Adjust Thursday's prep") then has two Thursday rows to choose
+    -- between and I4 ("tomorrow's prep") has two candidates, so one day in
+    -- seven neither case could be exercised as written.
+    date_trunc('day', NOW())
+      + (((4 - EXTRACT(DOW FROM NOW())::int + 6) % 7) + 1
+         + CASE WHEN ((4 - EXTRACT(DOW FROM NOW())::int + 6) % 7) + 1 = 1 THEN 7 ELSE 0 END)
+        * INTERVAL '1 day'
+      + INTERVAL '20 hours',
     ARRAY['Lucia', 'Pablo']::text[],
     'Tom',
     'Court 2',
