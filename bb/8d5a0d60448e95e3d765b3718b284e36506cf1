@@ -1,0 +1,23 @@
+cmd/qa/cases.go
+  s_a0286b603db96d::t_2fa08403561321 182,185-190,192-202
+docs/qa_results_v1.0.md
+  s_a0286b603db96d::t_2fa08403561321 244
+  s_a0286b603db96d::t_82f5765155e6ef 237-240
+  s_a0286b603db96d::t_637310ea413c79 241-243
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "bb8d5a0d60448e95e3d765b3718b284e36506cf1",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
