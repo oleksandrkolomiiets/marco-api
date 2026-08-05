@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -38,14 +39,16 @@ type flags struct {
 	filter   string
 	noPrompt bool
 	output   string
+	wipe     bool
 }
 
 func parseFlags() flags {
 	var f flags
 	flag.StringVar(&f.baseURL, "base-url", "http://localhost:8080", "Base URL of the local marco-api server")
 	flag.StringVar(&f.filter, "filter", "", "Comma-separated case IDs to run (e.g. A1,D1,D2). Empty = all.")
-	flag.BoolVar(&f.noPrompt, "no-prompt", false, "Skip cost warning + interactive pass/fail prompts")
+	flag.BoolVar(&f.noPrompt, "no-prompt", false, "Skip the cost warning and the interactive pass/fail prompts (does NOT bypass the wipe guard)")
 	flag.StringVar(&f.output, "output", "docs/qa_results_v1.0.md", "Markdown file to append results to")
+	flag.BoolVar(&f.wipe, "wipe", false, "Permit the fixture seed to TRUNCATE users CASCADE when the target database holds real accounts")
 	flag.Parse()
 	return f
 }
@@ -76,7 +79,44 @@ func main() {
 			runnable++
 		}
 	}
+
+	ctx := context.Background()
+
+	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	if err != nil {
+		fatal(ui, "connect db: %v", err)
+	}
+	defer pool.Close()
+
+	// fixtures.sql opens with TRUNCATE TABLE users CASCADE, which takes every
+	// account on the target database with it — chat history, exam attempts,
+	// match logs, preps, progress, refresh tokens. MARCO_DEV_MODE does not
+	// protect against that: run_qa.sh sets it for you, and a dev database is
+	// exactly where someone's own test account lives. So count what is about to
+	// be destroyed and make the caller say so out loud.
+	realUsers, err := countRealUsers(ctx, pool)
+	if err != nil {
+		fatal(ui, "count users: %v", err)
+	}
+	if realUsers > 0 && !f.wipe {
+		fatal(ui, "refusing to run: %s holds %d account(s) that are not @qa.local.\n"+
+			"    Seeding fixtures runs TRUNCATE TABLE users CASCADE — those accounts and every\n"+
+			"    message, exam attempt, match log, prep and lesson progress row attached to them\n"+
+			"    are deleted, with no backup. Take one first (make db-dump), then pass --wipe.",
+			safeDBLabel(cfg.DatabaseURL), realUsers)
+	}
+
 	if !f.noPrompt {
+		if realUsers > 0 {
+			ui.warn("DESTRUCTIVE: this wipes %d real account(s) on %s and everything attached to them. It cannot be undone.",
+				realUsers, safeDBLabel(cfg.DatabaseURL))
+			ui.prompt("Type 'wipe' to confirm: ")
+			ans, _ := stdin.ReadString('\n')
+			if strings.TrimSpace(ans) != "wipe" {
+				ui.plain("Aborted.\n")
+				return
+			}
+		}
 		ui.warn("This run will call Anthropic ~%d times, est. cost EUR %.2f", runnable, float64(runnable)*0.0025)
 		ui.prompt("Continue? [y/N]: ")
 		ans, _ := stdin.ReadString('\n')
@@ -86,14 +126,7 @@ func main() {
 		}
 	}
 
-	ctx := context.Background()
-
 	ui.plain("Loading fixtures... ")
-	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
-	if err != nil {
-		fatal(ui, "connect db: %v", err)
-	}
-	defer pool.Close()
 	if _, err := pool.Exec(ctx, fixturesSQL); err != nil {
 		fatal(ui, "seed fixtures: %v", err)
 	}
@@ -335,6 +368,29 @@ func summarise(ui *ui, passed, failed, skipped int) {
 	ui.plain("\n")
 	ui.bold("Summary: %d passed, %d failed, %d skipped", passed, failed, skipped)
 	ui.plain("\n")
+}
+
+// countRealUsers counts accounts that are NOT harness fixtures. The fixture
+// users all live on @qa.local, so anything else is somebody's actual account.
+func countRealUsers(ctx context.Context, pool *pgxpool.Pool) (int, error) {
+	var n int
+	err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM users WHERE email NOT LIKE '%@qa.local'`,
+	).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("query users: %w", err)
+	}
+	return n, nil
+}
+
+// safeDBLabel renders "host/dbname" from a connection string so the warning can
+// name the target without printing its password.
+func safeDBLabel(dsn string) string {
+	u, err := url.Parse(dsn)
+	if err != nil || u.Host == "" {
+		return "the configured database"
+	}
+	return u.Host + strings.TrimSuffix(u.Path, "/")
 }
 
 func fatal(ui *ui, format string, args ...any) {

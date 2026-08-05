@@ -207,7 +207,8 @@ var Cases = []TestCase{
 		UserMessage: "Adjust Thursday's prep",
 		Notes: "Requires upcoming_preparations[] to contain a prep scheduled on Thursday. " +
 			"MUST emit [MATCH_PREP: {\"mode\":\"adjust\",\"id\":\"<uuid>\"}] using the id from that row. " +
-			"Token appears BEFORE the coaching reply. Reply is short — \"opened\" / \"what do you want to change\". " +
+			"Token appears BEFORE the coaching reply. Reply is short and points at the tag — the token renders " +
+			"as a tag the user still has to tap, so \"tap to open\" is right and \"opened it\" is not. " +
 			"FAIL if: no token; invents a UUID not in upcoming_preparations[]; tells user to open the screen themselves.",
 		LangHint: "en",
 	},
@@ -217,7 +218,8 @@ var Cases = []TestCase{
 		UserMessage: "I've got a match Saturday at 6pm against Marco and Ana, set up a prep",
 		Notes: "MUST emit [MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"<RFC3339>\",\"opponents\":[\"Marco\",\"Ana\"]}]. " +
 			"scheduled_at must resolve Saturday 18:00 from `today`. mode must be \"create\". " +
-			"Coaching reply is short, suggests they fill in drills inside the sheet. " +
+			"Coaching reply is short, suggests they fill in drills inside the sheet, and describes a draft — " +
+			"nothing is saved until the user taps the tag, so \"is set up\" / \"created\" is a fail. " +
 			"FAIL if: no token; uses adjust mode with a fabricated id; redirects to app.",
 		LangHint: "en",
 	},
@@ -238,7 +240,8 @@ var Cases = []TestCase{
 		Notes: "Requires upcoming_preparations[] to contain a prep scheduled tomorrow. " +
 			"MUST emit [MATCH_PREP: {\"mode\":\"adjust\",\"id\":\"<uuid>\",\"drills\":[{\"title\":\"...bandeja...\",\"duration_seconds\":N}]}] " +
 			"— drills are valid on adjust mode when the user explicitly names a drill to add (the sheet opens with it pre-added). " +
-			"Coaching reply confirms what landed and offers more. " +
+			"Coaching reply says what is lined up and points at the tag — the drill is not in the queue until " +
+			"the user taps, so \"added\" / \"landed\" is a fail. " +
 			"FAIL if: emits create mode; invents a UUID; tells user to add the drill themselves through the app.",
 		LangHint: "en",
 	},

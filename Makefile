@@ -1,7 +1,7 @@
 -include .env
 export
 
-.PHONY: run build test test-integration migrate-up migrate-down db-up db-down db-logs seed qa qa-group
+.PHONY: run build test test-integration migrate-up migrate-down db-up db-down db-logs db-dump db-restore seed qa qa-group
 
 APP_NAME := marco-api
 MIGRATE  := migrate -path ./migrations -database "$(DATABASE_URL)"
@@ -37,6 +37,19 @@ db-down:
 
 db-logs:
 	docker compose logs -f postgres
+
+# Snapshot marco_dev to ./backups. Cheap insurance: the QA harness truncates
+# users CASCADE, and there is no other way back from that.
+db-dump: .wait-db ## Dump marco_dev to backups/marco_dev_<utc>.sql
+	@mkdir -p backups
+	@f=backups/marco_dev_$$(date -u +%Y%m%dT%H%M%SZ).sql; \
+		docker compose exec -T postgres pg_dump -U $(DB_USER) -d marco_dev > $$f && \
+		echo "wrote $$f ($$(wc -c < $$f | tr -d ' ') bytes)"
+
+db-restore: .wait-db ## Restore a dump: make db-restore FILE=backups/marco_dev_....sql
+	@test -n "$(FILE)" || { echo "usage: make db-restore FILE=backups/marco_dev_....sql"; exit 2; }
+	@docker compose exec -T postgres psql -U $(DB_USER) -d marco_dev < $(FILE)
+	@echo "restored $(FILE)"
 
 .wait-db:
 	@echo "Waiting for postgres to be ready..."

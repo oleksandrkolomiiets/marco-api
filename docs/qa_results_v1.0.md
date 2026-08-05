@@ -224,3 +224,7 @@ Full transcript: docs/qa_runs/run_20260515T201400Z_v1.3_seeded.txt.
 | 2026-05-19T13:47:08Z | I4 | logged | no-prompt mode |
 | 2026-05-19T13:52:04Z | I2 | logged | no-prompt mode |
 | 2026-05-19T13:52:07Z | I4 | logged | no-prompt mode |
+| 2026-08-05T19:12:03Z | I1 | fail | stream error: HTTP 401: {"error":"Unauthenticated","header":null} |
+| 2026-08-05T19:12:03Z | I2 | fail | stream error: HTTP 401: {"error":"Unauthenticated","header":null} |
+| 2026-08-05T19:12:03Z | I3 | fail | stream error: HTTP 401: {"error":"Unauthenticated","header":null} |
+| 2026-08-05T19:12:03Z | I4 | fail | stream error: HTTP 401: {"error":"Unauthenticated","header":null} |
