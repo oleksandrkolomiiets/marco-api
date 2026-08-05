@@ -1,5 +1,5 @@
 {
-  "_readme": "Canonical test vectors for Marco's inline token grammar ([LESSON_REF: ...], [MATCH_LOG: ...], [MATCH_PREP: ...]). IDENTICAL copies live in marco-api (internal/marco/testdata/token_fixtures.json) and marco-app (src/components/chat/token_fixtures.json) — update BOTH together; each repo's CI runs its implementation against its copy. The grammar itself is defined in marco-api internal/marco/prompt.md; if the prompt changes the token shapes, these fixtures and both parsers must change with it. Rules for shared cases: tokens must be complete (unterminated tokens are a streaming-only state, covered by the app's prefix property) and lesson-ref titles must not have leading/trailing spaces inside the quotes (the TS parser trims them, the Go parser does not). clean_text is the expected text after removing every token and trimming the ends — interior double spaces left by token removal are preserved. match_log / match_prep are server-side parse expectations (null = no valid token; match_prep compares mode and id, last valid token wins).",
+  "_readme": "Canonical test vectors for Marco's inline token grammar ([LESSON_REF: ...], [MATCH_LOG: ...], [MATCH_PREP: ...]). IDENTICAL copies live in marco-api (internal/marco/testdata/token_fixtures.json) and marco-app (src/components/chat/token_fixtures.json) — update BOTH together; each repo's CI runs its implementation against its copy. The grammar itself is defined in marco-api internal/marco/prompt.md; if the prompt changes the token shapes, these fixtures and both parsers must change with it. Rules for shared cases: tokens must be complete (unterminated tokens are a streaming-only state, covered by the app's prefix property) and lesson-ref titles must not have leading/trailing spaces inside the quotes (the TS parser trims them, the Go parser does not). clean_text is the expected text after removing every token and trimming the ends — interior double spaces left by token removal are preserved, but a run of two or more blank LINES collapses to one, so a token written on its own line does not leave a hole in the rendered bubble. match_log / match_prep are server-side parse expectations (null = no valid token; match_prep compares mode and id, last valid token wins).",
   "cases": [
     {
       "name": "plain text without tokens",
@@ -13,7 +13,12 @@
       "name": "lesson ref mid-sentence",
       "input": "Try [LESSON_REF: bandeja-basics | \"Bandeja basics\"] tonight.",
       "clean_text": "Try  tonight.",
-      "lesson_refs": [{ "id": "bandeja-basics", "title": "Bandeja basics" }],
+      "lesson_refs": [
+        {
+          "id": "bandeja-basics",
+          "title": "Bandeja basics"
+        }
+      ],
       "match_log": null,
       "match_prep": null
     },
@@ -22,8 +27,14 @@
       "input": "Start with [LESSON_REF: ready-position | \"Ready position\"] then [LESSON_REF: forehand-drive | \"Forehand drive\"].",
       "clean_text": "Start with  then .",
       "lesson_refs": [
-        { "id": "ready-position", "title": "Ready position" },
-        { "id": "forehand-drive", "title": "Forehand drive" }
+        {
+          "id": "ready-position",
+          "title": "Ready position"
+        },
+        {
+          "id": "forehand-drive",
+          "title": "Forehand drive"
+        }
       ],
       "match_log": null,
       "match_prep": null
@@ -32,7 +43,12 @@
       "name": "underscore id and unicode title at start",
       "input": "[LESSON_REF: vib_01 | \"Víbora intro\"] first.",
       "clean_text": "first.",
-      "lesson_refs": [{ "id": "vib_01", "title": "Víbora intro" }],
+      "lesson_refs": [
+        {
+          "id": "vib_01",
+          "title": "Víbora intro"
+        }
+      ],
       "match_log": null,
       "match_prep": null
     },
@@ -49,7 +65,10 @@
       "input": "[MATCH_LOG: {\"result\":\"won\",\"played_on\":\"2026-06-10\"}] Nice win!",
       "clean_text": "Nice win!",
       "lesson_refs": [],
-      "match_log": { "result": "won", "played_on": "2026-06-10" },
+      "match_log": {
+        "result": "won",
+        "played_on": "2026-06-10"
+      },
       "match_prep": null
     },
     {
@@ -63,7 +82,10 @@
         "note": "4-6 4-6",
         "feeling": "frustrated",
         "partner_name": "Tom",
-        "opponents": ["Lucia", "Pablo"]
+        "opponents": [
+          "Lucia",
+          "Pablo"
+        ]
       },
       "match_prep": null
     },
@@ -81,7 +103,10 @@
       "clean_text": "Queue ready for Thursday.",
       "lesson_refs": [],
       "match_log": null,
-      "match_prep": { "mode": "create", "id": "" }
+      "match_prep": {
+        "mode": "create",
+        "id": ""
+      }
     },
     {
       "name": "match prep adjust with id",
@@ -89,7 +114,10 @@
       "clean_text": "Opening your prep.",
       "lesson_refs": [],
       "match_log": null,
-      "match_prep": { "mode": "adjust", "id": "55555555-5555-5555-5555-555555555501" }
+      "match_prep": {
+        "mode": "adjust",
+        "id": "55555555-5555-5555-5555-555555555501"
+      }
     },
     {
       "name": "match prep with invalid mode is stripped but not parsed",
@@ -105,22 +133,39 @@
       "clean_text": "and",
       "lesson_refs": [],
       "match_log": null,
-      "match_prep": { "mode": "adjust", "id": "abc" }
+      "match_prep": {
+        "mode": "adjust",
+        "id": "abc"
+      }
     },
     {
       "name": "all three token types in one message",
       "input": "Good session! [LESSON_REF: net-play | \"Net play\"] [MATCH_LOG: {\"result\":\"won\",\"played_on\":\"2026-06-11\"}] [MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-13T19:00:00Z\"}] Rest tomorrow.",
       "clean_text": "Good session!    Rest tomorrow.",
-      "lesson_refs": [{ "id": "net-play", "title": "Net play" }],
-      "match_log": { "result": "won", "played_on": "2026-06-11" },
-      "match_prep": { "mode": "create", "id": "" }
+      "lesson_refs": [
+        {
+          "id": "net-play",
+          "title": "Net play"
+        }
+      ],
+      "match_log": {
+        "result": "won",
+        "played_on": "2026-06-11"
+      },
+      "match_prep": {
+        "mode": "create",
+        "id": ""
+      }
     },
     {
       "name": "message that is only a token cleans to empty",
       "input": "[MATCH_LOG: {\"result\":\"draw\",\"played_on\":\"2026-06-08\"}]",
       "clean_text": "",
       "lesson_refs": [],
-      "match_log": { "result": "draw", "played_on": "2026-06-08" },
+      "match_log": {
+        "result": "draw",
+        "played_on": "2026-06-08"
+      },
       "match_prep": null
     },
     {
@@ -130,6 +175,17 @@
       "lesson_refs": [],
       "match_log": null,
       "match_prep": null
+    },
+    {
+      "name": "token on its own line does not leave a blank hole",
+      "input": "Sunday's drafted with Ana on Court 1.\n\n[MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-14T11:00:00Z\"}]\n\nTap to save it.",
+      "clean_text": "Sunday's drafted with Ana on Court 1.\n\nTap to save it.",
+      "lesson_refs": [],
+      "match_log": null,
+      "match_prep": {
+        "mode": "create",
+        "id": ""
+      }
     }
   ]
 }

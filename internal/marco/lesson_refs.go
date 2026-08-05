@@ -15,6 +15,10 @@ type LessonRef struct {
 // must accept them for the prompt's LESSON_REF format to round-trip end-to-end.
 var lessonRefRegex = regexp.MustCompile(`\[LESSON_REF:\s*([a-zA-Z0-9_-]+)\s*\|\s*"([^"]+)"\s*\]`)
 
+// Two or more consecutive blank lines, i.e. what a stripped token leaves when
+// it was written on its own line. Mirrored in marco-app (marcoTokens.ts).
+var blankLineRunRegex = regexp.MustCompile(`\n[ \t]*\n(?:[ \t]*\n)+`)
+
 // CleanContent removes all structured tokens ([LESSON_REF:...], [MATCH_LOG:...],
 // [MATCH_PREP:...]) from text so stored assistant messages can be returned to
 // the client without raw prompt artefacts.
@@ -22,6 +26,11 @@ func CleanContent(text string) string {
 	text = lessonRefRegex.ReplaceAllString(text, "")
 	text = matchLogRegex.ReplaceAllString(text, "")
 	text = CleanMatchPrepTokens(text)
+	// A token that sat on a line of its own leaves the blank lines that framed
+	// it behind, and the chat bubble renders that as a hole in the middle of
+	// Marco's reply. Collapse any run of blank lines back to a single one.
+	// Interior horizontal runs stay as they are — the fixtures pin that.
+	text = blankLineRunRegex.ReplaceAllString(text, "\n\n")
 	return strings.TrimSpace(text)
 }
 
