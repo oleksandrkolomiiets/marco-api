@@ -1,0 +1,25 @@
+internal/achievements/compute_test.go
+  s_a0286b603db96d::t_a39968aa99c2e4 206
+  s_a0286b603db96d::t_e40729f6549612 430-454
+  s_a0286b603db96d::t_b6cda0c36628fc 87
+internal/achievements/model.go
+  s_a0286b603db96d::t_9730424e287172 305-315
+  s_a0286b603db96d::t_441f6048e75241 197
+  s_a0286b603db96d::t_c508c298a58acd 204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "133ced838dc9c19ae90d28ee56bbe6984c2fea2b",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
