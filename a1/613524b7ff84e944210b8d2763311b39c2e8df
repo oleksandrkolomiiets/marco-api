@@ -1,0 +1,27 @@
+docs/qa_results_v1.0.md
+  s_a0286b603db96d::t_b318f4317cd256 232-234
+  s_a0286b603db96d::t_ae2a2a9d5ea460 231
+  s_a0286b603db96d::t_adf58ef4fb0b45 235-236
+cmd/qa/main.go
+  s_a0286b603db96d::t_ebd35a127a193d 47,71-77
+  s_a0286b603db96d::t_5409eaa411eca8 180-191
+  s_a0286b603db96d::t_0083fd6d6adc2b 78-79
+cmd/qa/fixtures.sql
+  s_a0286b603db96d::t_5409eaa411eca8 77-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a1613524b7ff84e944210b8d2763311b39c2e8df",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
