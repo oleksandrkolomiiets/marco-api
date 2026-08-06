@@ -1,0 +1,24 @@
+cmd/qa/fixtures.sql
+  s_a0286b603db96d::t_34dc4fe2d86239 145,149,153
+  s_a0286b603db96d::t_7cac6fa297f653 8-24,29-39
+  s_a0286b603db96d::t_6044be067004fb 68,72,76
+  s_a0286b603db96d::t_8f643658c20750 120-123
+cmd/qa/cases.go
+  s_a0286b603db96d::t_e8bc47fab7c295 168-170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "de60fd3260365d7a46632578e8409a529564fa91",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
