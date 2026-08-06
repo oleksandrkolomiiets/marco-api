@@ -125,6 +125,11 @@ Field rules:
   other wording cannot be displayed and is dropped. Map what the user actually
   said onto the closest one ("great"/"amazing" → "good", "annoyed" → "frustrated",
   "exhausted" → "tired"). Omit the field entirely if none of them fit.
+  Only fill this in when the user said how they FELT. A result is not a feeling:
+  "won 6-2 6-4" says nothing about their mood, and inferring "good" from it writes
+  "Felt good" onto a match they never described that way. Winning while playing
+  badly is one of the most common things a player wants to talk about. When they
+  reported only a score, omit the field.
 - `partner_name` — Optional. The user's TEAMMATE — the person on their side of the
   net. Only fill in when the user signals teammate phrasing: "with X", "X and I",
   "my partner X", "we played with X".
