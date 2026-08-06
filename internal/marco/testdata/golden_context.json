@@ -1,5 +1,6 @@
 {
   "context": {
+    "today": "2026-01-01",
     "user": {
       "name": "Joost",
       "level": "beginner",
@@ -48,6 +49,7 @@
       {
         "id": "55555555-5555-5555-5555-555555555501",
         "scheduled_at": "2099-01-15T18:00:00Z",
+        "weekday": "Thursday",
         "opponents": [
           "Lucia",
           "Pablo"
@@ -57,8 +59,7 @@
         "note": "Right knee a bit stiff — go easy on lateral drills.",
         "preparation_pct": 0
       }
-    ],
-    "today": "2026-01-01"
+    ]
   },
   "messages": [
     {

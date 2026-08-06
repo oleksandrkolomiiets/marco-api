@@ -34,13 +34,43 @@ type UserContext struct {
 // [MATCH_PREP: {"mode":"adjust", ...}] token — the same rule that governs
 // LessonInfo for [LESSON_REF: ...].
 type PreparationInfo struct {
-	ID             string   `json:"id"`
-	ScheduledAt    string   `json:"scheduled_at"` // RFC3339
+	ID          string `json:"id"`
+	ScheduledAt string `json:"scheduled_at"` // RFC3339
+	// Weekday is scheduled_at's day name, and Day is "today", "tomorrow" or
+	// "" — both derived here rather than left to the model.
+	//
+	// Players refer to preps by day ("adjust Thursday's prep", "add a drill to
+	// tomorrow's"), and with only an RFC3339 string in the context that means
+	// working out which weekday a date falls on, then comparing. Asked to
+	// adjust Thursday's prep with a Friday prep and a Thursday prep on file,
+	// Marco picked the Friday one and called it "Thursday's prep against
+	// Clara" — the right shape of token pointing at the wrong match, which is
+	// worse than refusing, because the tag looks correct until it opens.
+	Weekday        string   `json:"weekday"`
+	Day            string   `json:"day,omitempty"`
 	Opponents      []string `json:"opponents"`
 	PartnerName    string   `json:"partner_name,omitempty"`
 	Court          string   `json:"court,omitempty"`
 	Note           string   `json:"note,omitempty"`
 	PreparationPct int      `json:"preparation_pct"`
+}
+
+// relativeDay names a prep's date the way the player would: "today" or
+// "tomorrow" when it falls there, and otherwise nothing, leaving the weekday
+// to carry it. Both dates are compared in UTC, matching the wall-clock-in-UTC
+// convention scheduled_at is stored under.
+func relativeDay(scheduled, now time.Time) string {
+	s := scheduled.UTC()
+	n := now.UTC()
+	sDay := time.Date(s.Year(), s.Month(), s.Day(), 0, 0, 0, 0, time.UTC)
+	nDay := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, time.UTC)
+	switch sDay.Sub(nDay) {
+	case 0:
+		return "today"
+	case 24 * time.Hour:
+		return "tomorrow"
+	}
+	return ""
 }
 
 // LessonInfo is the slug+title+level triple Marco needs to emit a valid
@@ -96,8 +126,9 @@ func NewAssembler(db *pgxpool.Pool) *Assembler {
 // excluding the latest user message which the caller is about to send), and
 // any error.
 func (a *Assembler) Build(ctx context.Context, userID uuid.UUID) (UserContext, []anthropic.Message, error) {
+	now := time.Now()
 	uc := UserContext{
-		Today:                time.Now().Format("2006-01-02"),
+		Today:                now.Format("2006-01-02"),
 		Goals:                []string{},
 		Progress:             Progress{Completed: []string{}, Mastered: []string{}},
 		AvailableLessons:     []LessonInfo{},
@@ -152,7 +183,7 @@ func (a *Assembler) Build(ctx context.Context, userID uuid.UUID) (UserContext, [
 		return nil
 	})
 	g.Go(func() error {
-		preps, err := a.loadUpcomingPreparations(gctx, userID)
+		preps, err := a.loadUpcomingPreparations(gctx, userID, now)
 		if err != nil {
 			return fmt.Errorf("load upcoming preparations: %w", err)
 		}
@@ -335,7 +366,7 @@ func (a *Assembler) loadLastMatch(ctx context.Context, userID uuid.UUID) (*LastM
 // after the match has technically started). Capped at 5 rows to keep prompt
 // tokens bounded; ordered soonest-first so "Thursday's prep" resolves
 // naturally to whichever fixture is closest.
-func (a *Assembler) loadUpcomingPreparations(ctx context.Context, userID uuid.UUID) ([]PreparationInfo, error) {
+func (a *Assembler) loadUpcomingPreparations(ctx context.Context, userID uuid.UUID, now time.Time) ([]PreparationInfo, error) {
 	const q = `
 		SELECT id, scheduled_at, opponents, COALESCE(partner_name, ''), COALESCE(court, ''), COALESCE(note, ''),
 		       COALESCE(
@@ -371,6 +402,8 @@ func (a *Assembler) loadUpcomingPreparations(ctx context.Context, userID uuid.UU
 		}
 		info.ID = id.String()
 		info.ScheduledAt = scheduled.UTC().Format(time.RFC3339)
+		info.Weekday = scheduled.UTC().Weekday().String()
+		info.Day = relativeDay(scheduled, now)
 		if info.Opponents == nil {
 			info.Opponents = []string{}
 		}
