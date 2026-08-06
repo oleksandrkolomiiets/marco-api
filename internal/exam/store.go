@@ -25,8 +25,9 @@ func NewStore(pool *pgxpool.Pool) Store {
 	return &pgxStore{pool: pool}
 }
 
-// listQuestionsInternal returns every question with options. If withCorrect
-// is false, every option's IsCorrect is forced to false before returning.
+// listQuestionsInternal returns every question with options. If withCorrect is
+// false the answer key is stripped: every option's IsCorrect is forced to
+// false and the question's Explanation is dropped.
 func (s *pgxStore) listQuestionsInternal(ctx context.Context, withCorrect bool) ([]Question, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT q.id, q.slug, q.order_index, q.category, q.prompt, q.explanation,
@@ -60,6 +61,12 @@ func (s *pgxStore) listQuestionsInternal(ctx context.Context, withCorrect bool) 
 		}
 		if !withCorrect {
 			o.IsCorrect = false
+			// The explanation gives the answer away as surely as is_correct
+			// does — "the serve must travel diagonally into the receiver's
+			// service box" leaves exactly one option standing. It is the
+			// teaching text for the results screen, which reads it off the
+			// attempt review, so withholding it here costs the client nothing.
+			q.Explanation = nil
 		}
 		if i, ok := indexByID[q.ID]; ok {
 			out[i].Options = append(out[i].Options, o)

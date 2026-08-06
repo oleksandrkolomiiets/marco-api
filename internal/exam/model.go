@@ -8,13 +8,17 @@ import (
 
 // Question is one of the 20 rules-exam questions. Options are inlined.
 type Question struct {
-	ID          uuid.UUID `json:"id"`
-	Slug        string    `json:"slug"`
-	OrderIndex  int       `json:"order_index"`
-	Category    string    `json:"category"`
-	Prompt      string    `json:"prompt"`
-	Explanation *string   `json:"explanation"`
-	Options     []Option  `json:"options"`
+	ID         uuid.UUID `json:"id"`
+	Slug       string    `json:"slug"`
+	OrderIndex int       `json:"order_index"`
+	Category   string    `json:"category"`
+	Prompt     string    `json:"prompt"`
+	// Explanation is the rule citation shown beside a wrong answer. Like
+	// Option.IsCorrect it is only populated on review responses: it names the
+	// rule the question turns on, so sending it with the paper would hand over
+	// the answers.
+	Explanation *string  `json:"explanation"`
+	Options     []Option `json:"options"`
 }
 
 // Option is one answer choice on a Question. IsCorrect is only populated on
