@@ -99,12 +99,20 @@ func validateMatchInput(req *createMatchRequest) (time.Time, []string, *validati
 		return time.Time{}, nil, &validationError{fiber.StatusBadRequest, "played_on must be YYYY-MM-DD"}
 	}
 
-	if req.Result != nil {
-		switch *req.Result {
-		case "won", "lost", "draw":
-		default:
-			return time.Time{}, nil, &validationError{fiber.StatusBadRequest, "result must be won, lost, or draw"}
-		}
+	// result was optional, and a row without one is unrepresentable downstream:
+	// it shows as "Played", matches neither the Wins nor the Losses filter,
+	// counts toward the match total but not the record, and never earns the
+	// first-win achievement. Every [MATCH_LOG: ...] example in prompt.md sends
+	// one and the app's form now requires one, so make the contract say so.
+	// UpdateMatch shares this validator and already replaces every column, so
+	// it was never a partial patch that could legitimately omit the field.
+	if req.Result == nil {
+		return time.Time{}, nil, &validationError{fiber.StatusBadRequest, "result is required"}
+	}
+	switch *req.Result {
+	case "won", "lost", "draw":
+	default:
+		return time.Time{}, nil, &validationError{fiber.StatusBadRequest, "result must be won, lost, or draw"}
 	}
 	if req.Feeling != nil && len(*req.Feeling) > 50 {
 		return time.Time{}, nil, &validationError{fiber.StatusBadRequest, "feeling must be 50 characters or fewer"}

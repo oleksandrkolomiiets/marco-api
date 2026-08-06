@@ -149,7 +149,7 @@ func TestLogsHandler_CreateMatch_BlankPartnerBecomesNil(t *testing.T) {
 	store := &stubMatchStore{match: testMatch(userID)}
 	app := newLogsApp(NewHandler(store), userID)
 
-	reqBody := `{"played_on":"2026-06-01","partner_name":"   "}`
+	reqBody := `{"played_on":"2026-06-01","result":"won","partner_name":"   "}`
 	req := httptest.NewRequest("POST", "/api/v1/logs/matches", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -185,33 +185,45 @@ func TestLogsHandler_CreateMatch_ValidationErrors(t *testing.T) {
 			"played_on must be YYYY-MM-DD",
 		},
 		{
+			// A row with no result reads as "Played", filters into neither
+			// Wins nor Losses, and counts toward the total but not the record.
+			"missing result",
+			`{"played_on":"2026-06-01"}`,
+			"result is required",
+		},
+		{
+			"null result",
+			`{"played_on":"2026-06-01","result":null}`,
+			"result is required",
+		},
+		{
 			"invalid result",
 			`{"played_on":"2026-06-01","result":"crushed"}`,
 			"result must be won, lost, or draw",
 		},
 		{
 			"feeling too long",
-			`{"played_on":"2026-06-01","feeling":"` + strings.Repeat("f", 51) + `"}`,
+			`{"played_on":"2026-06-01","result":"won","feeling":"` + strings.Repeat("f", 51) + `"}`,
 			"feeling must be 50 characters or fewer",
 		},
 		{
 			"note too long",
-			`{"played_on":"2026-06-01","note":"` + strings.Repeat("n", 2001) + `"}`,
+			`{"played_on":"2026-06-01","result":"won","note":"` + strings.Repeat("n", 2001) + `"}`,
 			"note must be 2000 characters or fewer",
 		},
 		{
 			"opponent name too long",
-			`{"played_on":"2026-06-01","opponents":["` + strings.Repeat("o", 101) + `"]}`,
+			`{"played_on":"2026-06-01","result":"won","opponents":["` + strings.Repeat("o", 101) + `"]}`,
 			"opponent name must be 100 characters or fewer",
 		},
 		{
 			"too many opponents",
-			`{"played_on":"2026-06-01","opponents":["a","b","c","d"]}`,
+			`{"played_on":"2026-06-01","result":"won","opponents":["a","b","c","d"]}`,
 			"at most 3 opponents allowed",
 		},
 		{
 			"invalid message_id",
-			`{"played_on":"2026-06-01","message_id":"not-a-uuid"}`,
+			`{"played_on":"2026-06-01","result":"won","message_id":"not-a-uuid"}`,
 			"invalid message_id",
 		},
 	}
@@ -258,7 +270,7 @@ func TestLogsHandler_CreateMatch_StoreError(t *testing.T) {
 	store := &stubMatchStore{createErr: errors.New("db down")}
 	app := newLogsApp(NewHandler(store), uuid.New())
 
-	req := httptest.NewRequest("POST", "/api/v1/logs/matches", strings.NewReader(`{"played_on":"2026-06-01"}`))
+	req := httptest.NewRequest("POST", "/api/v1/logs/matches", strings.NewReader(`{"played_on":"2026-06-01","result":"won"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := app.Test(req, -1)
@@ -278,8 +290,8 @@ func TestLogsHandler_Unauthorized(t *testing.T) {
 		path   string
 		body   string
 	}{
-		{"CreateMatch", "POST", "/api/v1/logs/matches", `{"played_on":"2026-06-01"}`},
-		{"UpdateMatch", "PUT", "/api/v1/logs/matches/" + uuid.New().String(), `{"played_on":"2026-06-01"}`},
+		{"CreateMatch", "POST", "/api/v1/logs/matches", `{"played_on":"2026-06-01","result":"won"}`},
+		{"UpdateMatch", "PUT", "/api/v1/logs/matches/" + uuid.New().String(), `{"played_on":"2026-06-01","result":"won"}`},
 		{"ListMatches", "GET", "/api/v1/logs/matches", ""},
 		{"ListPartners", "GET", "/api/v1/logs/partners", ""},
 	}
@@ -344,7 +356,7 @@ func TestLogsHandler_UpdateMatch_InvalidMatchID(t *testing.T) {
 	store := &stubMatchStore{}
 	app := newLogsApp(NewHandler(store), uuid.New())
 
-	req := httptest.NewRequest("PUT", "/api/v1/logs/matches/not-a-uuid", strings.NewReader(`{"played_on":"2026-06-01"}`))
+	req := httptest.NewRequest("PUT", "/api/v1/logs/matches/not-a-uuid", strings.NewReader(`{"played_on":"2026-06-01","result":"won"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := app.Test(req, -1)
@@ -384,7 +396,7 @@ func TestLogsHandler_UpdateMatch_NotFound(t *testing.T) {
 	app := newLogsApp(NewHandler(store), uuid.New())
 
 	req := httptest.NewRequest("PUT", "/api/v1/logs/matches/"+uuid.New().String(),
-		strings.NewReader(`{"played_on":"2026-06-01"}`))
+		strings.NewReader(`{"played_on":"2026-06-01","result":"won"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := app.Test(req, -1)
@@ -402,7 +414,7 @@ func TestLogsHandler_UpdateMatch_StoreError(t *testing.T) {
 	app := newLogsApp(NewHandler(store), uuid.New())
 
 	req := httptest.NewRequest("PUT", "/api/v1/logs/matches/"+uuid.New().String(),
-		strings.NewReader(`{"played_on":"2026-06-01"}`))
+		strings.NewReader(`{"played_on":"2026-06-01","result":"won"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := app.Test(req, -1)
