@@ -1,0 +1,23 @@
+internal/marco/lesson_refs.go
+  s_a0286b603db96d::t_59aa1fe8183b98 26-32
+internal/marco/testdata/token_fixtures.json
+  s_a0286b603db96d::t_62340c3d88a56b 2,15,28,45,144
+internal/marco/match_prep_test.go
+  s_a0286b603db96d::t_0de8472c311901 160-161,163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "4e5ad05ff88df3d72dd59d350d2264a59b8c654b",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
