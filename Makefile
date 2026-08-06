@@ -13,8 +13,14 @@ run:
 build:
 	go build -o bin/$(APP_NAME) ./cmd/server
 
+# TEST_DATABASE_URL is cleared deliberately. The bare `export` at the top of
+# this file puts every variable into each recipe's environment, so the default
+# below reached this target too and the DB-backed tests ran after all — against
+# whatever state marco_test happened to be in, and without the -p 1 that
+# test-integration uses, so the packages TRUNCATE each other's fixtures and
+# fail at random. Plain `make test` skips them, as advertised.
 test:
-	go test -v -race ./...
+	TEST_DATABASE_URL= go test -v -race ./...
 
 TEST_DATABASE_URL ?= postgres://marco:marco@localhost:5432/marco_test?sslmode=disable
 
