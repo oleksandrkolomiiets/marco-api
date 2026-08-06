@@ -1,0 +1,79 @@
+internal/auth/password_reset.go
+  s_a0286b603db96d::t_91abe14514f5c7 218-220
+  s_a0286b603db96d::t_80d193c8172873 204-207
+migrations/000019_sessions.up.sql
+  s_a0286b603db96d::t_8f3c388da94e37 1-39
+internal/auth/password_reset_test.go
+  s_a0286b603db96d::t_ba0aae14bc756b 249-252,255-260
+  s_a0286b603db96d::t_41ae6be42b7ae0 237,239
+internal/auth/sessions.go
+  s_a0286b603db96d::t_3a3d135c544548 1-153
+internal/auth/handler.go
+  s_a0286b603db96d::t_bf0cc61756ef8e 150-162,170-185
+  s_a0286b603db96d::t_919c90a7caa7ad 112,249,280
+  s_a0286b603db96d::t_bfae103dfefa70 335-349,358
+internal/routes/routes.go
+  s_a0286b603db96d::t_b0b1b2c4e2e347 60-65
+  s_a0286b603db96d::t_1f020ae4fa1310 31
+cmd/qa/main.go
+  s_a0286b603db96d::t_a4729cd9ccb74a 202-204
+internal/middleware/auth_test.go
+  s_a0286b603db96d::t_eb200db87ba8ee 25-41,44-48,50,53,55-57
+  s_a0286b603db96d::t_7350652df04dd8 154
+  s_a0286b603db96d::t_f29ddcbeccb629 6
+  s_a0286b603db96d::t_54ed2dd9cddd3a 4
+  s_a0286b603db96d::t_4c8f165dd06433 69,74,146
+  s_a0286b603db96d::t_0bfbaceeae205d 177-257
+CLAUDE.md
+  s_a0286b603db96d::t_251cc5809be57c 40-41
+  s_a0286b603db96d::t_9f63ae5b7f1340 52-54
+internal/middleware/auth.go
+  s_a0286b603db96d::t_271ef1093f066b 12-21,34-48
+  s_a0286b603db96d::t_b2398aeac660f8 51
+internal/auth/handler_test.go
+  s_a0286b603db96d::t_1fd2df360c4872 674-676,711-714,729-732
+  s_a0286b603db96d::t_55406af0a889ed 360-363,365,369-371,373-381,385-393
+  s_a0286b603db96d::t_9dd1fcd20abeca 244,394,749-777,780-782,784,787
+  s_a0286b603db96d::t_87db148f584ac6 105-111,116-118
+  s_a0286b603db96d::t_0fbec4dbbd385d 122-124,128-154,164-234,238-243
+  s_a0286b603db96d::t_c93ac558dbe6fb 155-163
+  s_a0286b603db96d::t_50690810d4853b 245
+  s_a0286b603db96d::t_0ef8e521fd2ef7 395
+internal/auth/store.go
+  s_a0286b603db96d::t_4d135ef99a2552 71-73,81-83
+  s_a0286b603db96d::t_fee1a4960cb1d1 16
+  s_a0286b603db96d::t_7b7df453794903 33-38
+  s_a0286b603db96d::t_1e144d3db645ea 90-91,95
+migrations/000019_sessions.down.sql
+  s_a0286b603db96d::t_08eb7efc22af78 1-4
+internal/auth/sessions_test.go
+  s_a0286b603db96d::t_b19fce28cdff2c 264-268,270
+  s_a0286b603db96d::t_884c5c1a67beb9 1-263,269,271-326,350-437
+  s_a0286b603db96d::t_ef8fcac8ed12d2 327-349
+internal/auth/sessions_store.go
+  s_a0286b603db96d::t_32f7bcb24cc2cc 1-4,6-8,10-33,42,45-91,111-220
+  s_a0286b603db96d::t_b503a7c8cbcbb7 92-110
+  s_a0286b603db96d::t_4e2368082b905d 5,9
+  s_a0286b603db96d::t_0e196ecf420f02 34-41,43-44
+internal/auth/jwt.go
+  s_a0286b603db96d::t_b8e689406ecc07 43,46-48
+  s_a0286b603db96d::t_624615fa5d0c0c 18-22
+internal/auth/jwt_test.go
+  s_a0286b603db96d::t_4c8f165dd06433 25,36,45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "6a93c1b643184ea651387bb654f86e30d1a0c95e",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
