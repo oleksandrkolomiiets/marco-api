@@ -1,0 +1,24 @@
+internal/auth/handler.go
+  s_a0286b603db96d::t_ba5573ae26f916 228,234-237,241,247-267
+  s_a0286b603db96d::t_7359cc60000eb9 268-269
+internal/auth/handler_test.go
+  s_a0286b603db96d::t_abca4cae75ef46 330-347,354-362
+  s_a0286b603db96d::t_493efc67ac4372 348-353
+  s_a0286b603db96d::t_0f7b12806bd3bf 377,383,389
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "30a50bfaf946585822d0d6e2b2b853a1acf9c24b",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
