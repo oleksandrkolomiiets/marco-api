@@ -109,7 +109,7 @@ func (h *Handler) GoogleSignIn(c *fiber.Ctx) error {
 		}
 	}
 
-	return h.issueTokens(c, user, true)
+	return h.startSession(c, user, true)
 }
 
 type refreshRequest struct {
@@ -147,7 +147,19 @@ func (h *Handler) Refresh(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
-	return h.issueTokens(c, user, false)
+	// Rotation keeps the session and bumps its last-seen, which is the only
+	// regular heartbeat the devices list gets. A session that was revoked from
+	// another device fails here, so a refresh token that is still sitting in a
+	// signed-out app cannot mint itself back to life.
+	alive, err := h.auth.TouchSession(c.Context(), stored.SessionID, deviceInfoFrom(c))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+	}
+	if !alive {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid_refresh_token"})
+	}
+
+	return h.issueTokens(c, user, false, stored.SessionID)
 }
 
 func (h *Handler) SignOut(c *fiber.Ctx) error {
@@ -155,7 +167,22 @@ func (h *Handler) SignOut(c *fiber.Ctx) error {
 	if !ok || userID == uuid.Nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
 	}
-	if err := h.auth.DeleteAllUserRefreshTokens(c.Context(), userID); err != nil {
+
+	// Sign out this device, not every device. Before sessions existed this
+	// revoked every refresh token the user had, so signing out on a phone also
+	// signed out the tablet with no way to tell that had happened; "Sign out
+	// all other devices" on the devices screen is the explicit way to do that
+	// now. An access token minted before sessions existed carries no sid — for
+	// those, fall back to the old behaviour rather than leaving the caller
+	// signed in server-side. Access tokens last 15 minutes, so that ends fast.
+	sessionID := SessionIDFrom(c)
+	if sessionID == uuid.Nil {
+		if err := h.auth.RevokeAllSessions(c.Context(), userID); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
+		}
+		return c.JSON(fiber.Map{"message": "signed out"})
+	}
+	if _, err := h.auth.RevokeSession(c.Context(), userID, sessionID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	return c.JSON(fiber.Map{"message": "signed out"})
@@ -219,7 +246,7 @@ func (h *Handler) EmailSignUp(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create user"})
 	}
 
-	return h.issueTokens(c, user, true)
+	return h.startSession(c, user, true)
 }
 
 func (h *Handler) EmailSignIn(c *fiber.Ctx) error {
@@ -250,7 +277,7 @@ func (h *Handler) EmailSignIn(c *fiber.Ctx) error {
 		return credentialsRejected(c, "")
 	}
 
-	return h.issueTokens(c, user, true)
+	return h.startSession(c, user, true)
 }
 
 // invalidCredentialsMessage is the single answer to every failed sign-in. It
@@ -305,8 +332,21 @@ func validatePassword(p string) error {
 	return nil
 }
 
-func (h *Handler) issueTokens(c *fiber.Ctx, user *users.User, includeUser bool) error {
-	accessToken, err := h.jwt.GenerateAccessToken(user.ID, user.Plan)
+// startSession is the sign-in path: a new device session, then tokens bound to
+// it. Every caller that authenticates from scratch goes through here so no
+// sign-in can quietly skip creating the session the devices list reads.
+func (h *Handler) startSession(c *fiber.Ctx, user *users.User, includeUser bool) error {
+	session, err := h.auth.CreateSession(c.Context(), user.ID, deviceInfoFrom(c))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to start session"})
+	}
+	return h.issueTokens(c, user, includeUser, session.ID)
+}
+
+func (h *Handler) issueTokens(
+	c *fiber.Ctx, user *users.User, includeUser bool, sessionID uuid.UUID,
+) error {
+	accessToken, err := h.jwt.GenerateAccessToken(user.ID, user.Plan, sessionID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to issue access token"})
 	}
@@ -315,7 +355,7 @@ func (h *Handler) issueTokens(c *fiber.Ctx, user *users.User, includeUser bool) 
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to issue refresh token"})
 	}
 	expiresAt := time.Now().Add(h.jwt.RefreshTTL())
-	if err := h.auth.SaveRefreshToken(c.Context(), user.ID, hash, expiresAt); err != nil {
+	if err := h.auth.SaveRefreshToken(c.Context(), user.ID, sessionID, hash, expiresAt); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to persist refresh token"})
 	}
 

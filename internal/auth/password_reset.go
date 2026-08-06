@@ -201,8 +201,10 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 	}
 
 	// Whoever knew the old password — including whoever the reset was prompted
-	// by — loses every existing session. This is the point of a reset.
-	if err := h.auth.DeleteAllUserRefreshTokens(c.Context(), user.ID); err != nil {
+	// by — loses every existing session on every device. This is the point of
+	// a reset, so it revokes sessions rather than just dropping tokens: a
+	// device left behind must vanish from the devices list too.
+	if err := h.auth.RevokeAllSessions(c.Context(), user.ID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
@@ -213,7 +215,9 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 
-	return h.issueTokens(c, user, true)
+	// A fresh session for the device that did the reset — it's the only one
+	// left standing.
+	return h.startSession(c, user, true)
 }
 
 func displayNameOf(name *string) string {

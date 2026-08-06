@@ -15,6 +15,11 @@ import (
 type Claims struct {
 	UserID uuid.UUID `json:"sub"`
 	Plan   string    `json:"plan"`
+	// SessionID is which device this token was issued to, so the devices list
+	// can mark one entry "This device". omitempty because access tokens minted
+	// before sessions existed carry no sid; they decode to uuid.Nil and are
+	// treated as "session unknown" until they expire, which takes 15 minutes.
+	SessionID uuid.UUID `json:"sid,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -35,11 +40,12 @@ func NewJWTService(secret string, accessTTL, refreshTTL time.Duration) *JWTServi
 func (s *JWTService) AccessTTL() time.Duration  { return s.accessTTL }
 func (s *JWTService) RefreshTTL() time.Duration { return s.refreshTTL }
 
-func (s *JWTService) GenerateAccessToken(userID uuid.UUID, plan string) (string, error) {
+func (s *JWTService) GenerateAccessToken(userID uuid.UUID, plan string, sessionID uuid.UUID) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
-		Plan:   plan,
+		UserID:    userID,
+		Plan:      plan,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID.String(),
 			IssuedAt:  jwt.NewNumericDate(now),

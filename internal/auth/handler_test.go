@@ -102,21 +102,145 @@ type stubAuthStore struct {
 	consumedAt     map[uuid.UUID]time.Time
 	lastSentAt     time.Time
 	createResetErr error
+
+	// Device sessions.
+	sessions           []*Session
+	revokedSessions    map[uuid.UUID]bool
+	revokedAllSessions []uuid.UUID
+	touched            []uuid.UUID
+	createSessionErr   error
 }
 
 func newStubAuthStore() *stubAuthStore {
 	return &stubAuthStore{
-		tokens:     map[string]RefreshToken{},
-		consumedAt: map[uuid.UUID]time.Time{},
+		tokens:          map[string]RefreshToken{},
+		consumedAt:      map[uuid.UUID]time.Time{},
+		revokedSessions: map[uuid.UUID]bool{},
 	}
 }
 
-func (s *stubAuthStore) SaveRefreshToken(_ context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+func (s *stubAuthStore) SaveRefreshToken(
+	_ context.Context, userID, sessionID uuid.UUID, tokenHash string, expiresAt time.Time,
+) error {
 	if s.saveErr != nil {
 		return s.saveErr
 	}
-	s.tokens[tokenHash] = RefreshToken{ID: uuid.New(), UserID: userID, TokenHash: tokenHash, ExpiresAt: expiresAt}
+	s.tokens[tokenHash] = RefreshToken{
+		ID: uuid.New(), UserID: userID, SessionID: sessionID,
+		TokenHash: tokenHash, ExpiresAt: expiresAt,
+	}
 	return nil
+}
+
+// --- sessions ---
+
+func (s *stubAuthStore) CreateSession(
+	_ context.Context, userID uuid.UUID, info DeviceInfo,
+) (*Session, error) {
+	if s.createSessionErr != nil {
+		return nil, s.createSessionErr
+	}
+	now := time.Now()
+	sess := &Session{
+		ID: uuid.New(), UserID: userID,
+		DeviceName: nilIfBlank(info.DeviceName),
+		Platform:   nilIfBlank(info.Platform),
+		AppVersion: nilIfBlank(info.AppVersion),
+		CreatedAt:  now, LastSeenAt: now,
+	}
+	s.sessions = append(s.sessions, sess)
+	return sess, nil
+}
+
+func (s *stubAuthStore) IsSessionLive(_ context.Context, id uuid.UUID) (bool, error) {
+	for _, sess := range s.sessions {
+		if sess.ID == id {
+			return !s.revokedSessions[id], nil
+		}
+	}
+	return false, nil
+}
+
+func (s *stubAuthStore) ListSessions(_ context.Context, userID uuid.UUID) ([]Session, error) {
+	out := []Session{}
+	for _, sess := range s.sessions {
+		if sess.UserID == userID && !s.revokedSessions[sess.ID] {
+			out = append(out, *sess)
+		}
+	}
+	return out, nil
+}
+
+func (s *stubAuthStore) TouchSession(_ context.Context, id uuid.UUID, info DeviceInfo) (bool, error) {
+	for _, sess := range s.sessions {
+		if sess.ID != id || s.revokedSessions[sess.ID] {
+			continue
+		}
+		sess.LastSeenAt = time.Now()
+		// COALESCE semantics: a blank header leaves the stored value alone.
+		if v := nilIfBlank(info.DeviceName); v != nil {
+			sess.DeviceName = v
+		}
+		if v := nilIfBlank(info.Platform); v != nil {
+			sess.Platform = v
+		}
+		if v := nilIfBlank(info.AppVersion); v != nil {
+			sess.AppVersion = v
+		}
+		s.touched = append(s.touched, id)
+		return true, nil
+	}
+	return false, nil
+}
+
+func (s *stubAuthStore) RevokeSession(_ context.Context, userID, id uuid.UUID) (bool, error) {
+	for _, sess := range s.sessions {
+		if sess.ID != id || sess.UserID != userID || s.revokedSessions[sess.ID] {
+			continue
+		}
+		s.revokedSessions[id] = true
+		s.dropTokensForSession(id)
+		return true, nil
+	}
+	return false, nil
+}
+
+func (s *stubAuthStore) RevokeOtherSessions(
+	_ context.Context, userID, keepID uuid.UUID,
+) (int64, error) {
+	var count int64
+	for _, sess := range s.sessions {
+		if sess.UserID != userID || sess.ID == keepID || s.revokedSessions[sess.ID] {
+			continue
+		}
+		s.revokedSessions[sess.ID] = true
+		s.dropTokensForSession(sess.ID)
+		count++
+	}
+	return count, nil
+}
+
+func (s *stubAuthStore) RevokeAllSessions(_ context.Context, userID uuid.UUID) error {
+	s.revokedAllSessions = append(s.revokedAllSessions, userID)
+	for _, sess := range s.sessions {
+		if sess.UserID == userID {
+			s.revokedSessions[sess.ID] = true
+		}
+	}
+	for hash, t := range s.tokens {
+		if t.UserID == userID {
+			delete(s.tokens, hash)
+		}
+	}
+	return nil
+}
+
+func (s *stubAuthStore) dropTokensForSession(id uuid.UUID) {
+	for hash, t := range s.tokens {
+		if t.SessionID == id {
+			delete(s.tokens, hash)
+		}
+	}
 }
 
 func (s *stubAuthStore) GetRefreshToken(_ context.Context, tokenHash string) (*RefreshToken, error) {
@@ -233,21 +357,40 @@ func newTestHandlerWithEmail(
 }
 
 // newAuthApp wires the auth routes the same way routes.Register does, minus
-// the rate limiter. signedInAs, when non-nil, simulates the auth middleware
-// for the /auth/signout route.
-func newAuthApp(h *Handler, signedInAs *uuid.UUID) *fiber.App {
+// the rate limiter. signedInAs, when non-nil, simulates the auth middleware for
+// the authenticated routes. The optional sessionID stands in for the token's
+// sid claim; omit it to exercise the pre-sessions path, where sid is uuid.Nil.
+func newAuthApp(h *Handler, signedInAs *uuid.UUID, sessionID ...uuid.UUID) *fiber.App {
 	app := fiber.New()
+	authed := func(c *fiber.Ctx) error {
+		if signedInAs != nil {
+			c.Locals("user_id", *signedInAs)
+		}
+		if len(sessionID) > 0 {
+			c.Locals("session_id", sessionID[0])
+		}
+		return c.Next()
+	}
 	app.Post("/auth/google", h.GoogleSignIn)
 	app.Post("/auth/signup", h.EmailSignUp)
 	app.Post("/auth/signin", h.EmailSignIn)
 	app.Post("/auth/refresh", h.Refresh)
-	app.Post("/auth/signout", func(c *fiber.Ctx) error {
-		if signedInAs != nil {
-			c.Locals("user_id", *signedInAs)
-		}
-		return c.Next()
-	}, h.SignOut)
+	app.Post("/auth/signout", authed, h.SignOut)
+	app.Get("/api/v1/devices", authed, h.ListDevices)
+	app.Delete("/api/v1/devices/others", authed, h.RevokeOtherDevices)
+	app.Delete("/api/v1/devices/:id", authed, h.RevokeDevice)
 	return app
+}
+
+// seedSession gives a stub store a live session plus a refresh token on it,
+// the state a real sign-in would have left behind.
+func seedSession(t *testing.T, store *stubAuthStore, userID uuid.UUID, name string) *Session {
+	t.Helper()
+	sess, err := store.CreateSession(
+		context.Background(), userID, DeviceInfo{DeviceName: name},
+	)
+	require.NoError(t, err)
+	return sess
 }
 
 func postJSON(t *testing.T, app *fiber.App, path, body string) (int, string) {
@@ -528,7 +671,9 @@ func TestRefresh_RotatesToken(t *testing.T) {
 	jwtSvc := newTestJWTService()
 	raw, hash, err := jwtSvc.GenerateRefreshToken()
 	require.NoError(t, err)
-	require.NoError(t, authStore.SaveRefreshToken(context.Background(), user.ID, hash, time.Now().Add(time.Hour)))
+	sess := seedSession(t, authStore, user.ID, "iPhone 17")
+	require.NoError(t, authStore.SaveRefreshToken(
+		context.Background(), user.ID, sess.ID, hash, time.Now().Add(time.Hour)))
 
 	app := newAuthApp(newTestHandler(userStore, authStore), nil)
 	status, body := postJSON(t, app, "/auth/refresh", `{"refresh_token":"`+raw+`"}`)
@@ -563,7 +708,10 @@ func TestRefresh_Failures(t *testing.T) {
 		jwtSvc := newTestJWTService()
 		raw, hash, err := jwtSvc.GenerateRefreshToken()
 		require.NoError(t, err)
-		require.NoError(t, authStore.SaveRefreshToken(context.Background(), uuid.New(), hash, time.Now().Add(-time.Minute)))
+		expiredUser := uuid.New()
+		sess := seedSession(t, authStore, expiredUser, "iPhone 17")
+		require.NoError(t, authStore.SaveRefreshToken(
+			context.Background(), expiredUser, sess.ID, hash, time.Now().Add(-time.Minute)))
 
 		app := newAuthApp(newTestHandler(&stubUserStore{}, authStore), nil)
 		status, body := postJSON(t, app, "/auth/refresh", `{"refresh_token":"`+raw+`"}`)
@@ -578,7 +726,10 @@ func TestRefresh_Failures(t *testing.T) {
 		jwtSvc := newTestJWTService()
 		raw, hash, err := jwtSvc.GenerateRefreshToken()
 		require.NoError(t, err)
-		require.NoError(t, authStore.SaveRefreshToken(context.Background(), uuid.New(), hash, time.Now().Add(time.Hour)))
+		goneUser := uuid.New()
+		sess := seedSession(t, authStore, goneUser, "iPhone 17")
+		require.NoError(t, authStore.SaveRefreshToken(
+			context.Background(), goneUser, sess.ID, hash, time.Now().Add(time.Hour)))
 
 		app := newAuthApp(newTestHandler(&stubUserStore{}, authStore), nil) // byIDFn nil → ErrNoRows
 		status, body := postJSON(t, app, "/auth/refresh", `{"refresh_token":"`+raw+`"}`)
@@ -595,16 +746,45 @@ func TestRefresh_Failures(t *testing.T) {
 
 // --- SignOut ---
 
-func TestSignOut_RevokesAllUserTokens(t *testing.T) {
+// Signing out on one device leaves the others alone. It used to drop every
+// refresh token the user had, so signing out on a phone silently signed out
+// the tablet as well.
+func TestSignOut_EndsOnlyTheCallingDevice(t *testing.T) {
 	userID := uuid.New()
 	authStore := newStubAuthStore()
-	require.NoError(t, authStore.SaveRefreshToken(context.Background(), userID, "hash-a", time.Now().Add(time.Hour)))
-	require.NoError(t, authStore.SaveRefreshToken(context.Background(), userID, "hash-b", time.Now().Add(time.Hour)))
+	phone := seedSession(t, authStore, userID, "iPhone 17")
+	tablet := seedSession(t, authStore, userID, "iPad Pro")
+	require.NoError(t, authStore.SaveRefreshToken(
+		context.Background(), userID, phone.ID, "hash-phone", time.Now().Add(time.Hour)))
+	require.NoError(t, authStore.SaveRefreshToken(
+		context.Background(), userID, tablet.ID, "hash-tablet", time.Now().Add(time.Hour)))
 
-	app := newAuthApp(newTestHandler(&stubUserStore{}, authStore), &userID)
+	app := newAuthApp(newTestHandler(&stubUserStore{}, authStore), &userID, phone.ID)
 	status, body := postJSON(t, app, "/auth/signout", `{}`)
 	require.Equal(t, fiber.StatusOK, status, body)
-	assert.Equal(t, []uuid.UUID{userID}, authStore.deletedAll)
+
+	assert.True(t, authStore.revokedSessions[phone.ID], "the calling device is signed out")
+	assert.False(t, authStore.revokedSessions[tablet.ID], "the other device is left alone")
+	_, phoneToken := authStore.tokens["hash-phone"]
+	_, tabletToken := authStore.tokens["hash-tablet"]
+	assert.False(t, phoneToken, "its refresh token goes with it")
+	assert.True(t, tabletToken, "the other device keeps its token")
+}
+
+// An access token minted before sessions existed carries no sid. Revoking
+// "the current session" would then be a no-op and leave the caller signed in
+// server-side, so that case still clears everything.
+func TestSignOut_WithoutASessionClaimRevokesEverything(t *testing.T) {
+	userID := uuid.New()
+	authStore := newStubAuthStore()
+	phone := seedSession(t, authStore, userID, "iPhone 17")
+	require.NoError(t, authStore.SaveRefreshToken(
+		context.Background(), userID, phone.ID, "hash-phone", time.Now().Add(time.Hour)))
+
+	app := newAuthApp(newTestHandler(&stubUserStore{}, authStore), &userID) // no sid
+	status, body := postJSON(t, app, "/auth/signout", `{}`)
+	require.Equal(t, fiber.StatusOK, status, body)
+	assert.Equal(t, []uuid.UUID{userID}, authStore.revokedAllSessions)
 	assert.Empty(t, authStore.tokens)
 }
 

@@ -22,7 +22,7 @@ func TestJWT_GenerateAndValidateRoundTrip(t *testing.T) {
 	svc := newTestJWTService()
 	userID := uuid.New()
 
-	token, err := svc.GenerateAccessToken(userID, "premium")
+	token, err := svc.GenerateAccessToken(userID, "premium", uuid.New())
 	require.NoError(t, err)
 
 	claims, err := svc.ValidateAccessToken(token)
@@ -33,7 +33,7 @@ func TestJWT_GenerateAndValidateRoundTrip(t *testing.T) {
 
 func TestJWT_RejectsExpiredToken(t *testing.T) {
 	expired := NewJWTService(testSecret, -time.Minute, time.Hour)
-	token, err := expired.GenerateAccessToken(uuid.New(), "free")
+	token, err := expired.GenerateAccessToken(uuid.New(), "free", uuid.New())
 	require.NoError(t, err)
 
 	_, err = newTestJWTService().ValidateAccessToken(token)
@@ -42,7 +42,7 @@ func TestJWT_RejectsExpiredToken(t *testing.T) {
 
 func TestJWT_RejectsWrongSecret(t *testing.T) {
 	other := NewJWTService("ffffffffffffffffffffffffffffffff", time.Minute, time.Hour)
-	token, err := other.GenerateAccessToken(uuid.New(), "free")
+	token, err := other.GenerateAccessToken(uuid.New(), "free", uuid.New())
 	require.NoError(t, err)
 
 	_, err = newTestJWTService().ValidateAccessToken(token)

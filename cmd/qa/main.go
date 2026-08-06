@@ -199,7 +199,9 @@ func main() {
 		}
 		ran[c.ID] = true
 
-		token, err := jwtSvc.GenerateAccessToken(uid, "coach")
+		// uuid.Nil session: the harness talks straight to /api/v1/chat and
+		// never signs in, so it has no device session to belong to.
+		token, err := jwtSvc.GenerateAccessToken(uid, "coach", uuid.Nil)
 		if err != nil {
 			ui.errf("mint token: %v", err)
 			failed++

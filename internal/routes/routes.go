@@ -28,7 +28,7 @@ func Register(app *fiber.App, cfg *config.Config, db *pgxpool.Pool) error {
 	userStore := users.NewUserStore(db)
 	authStore := auth.NewAuthStore(db)
 	jwtSvc := auth.NewJWTService(cfg.JWTSecret, cfg.JWTAccessTTL, cfg.JWTRefreshTTL)
-	authMW := middleware.NewAuthMiddleware(jwtSvc)
+	authMW := middleware.NewAuthMiddleware(jwtSvc, authStore)
 
 	// Unauthenticated routes
 	app.Get("/health", health.NewHandler(db).Check)
@@ -56,6 +56,12 @@ func Register(app *fiber.App, cfg *config.Config, db *pgxpool.Pool) error {
 	userHandler := users.NewHandler(userStore)
 	v1.Get("/me", userHandler.GetMe)
 	v1.Patch("/me", userHandler.UpdateMe)
+
+	// Connected devices — served by the auth handler because a device is a
+	// session, and sessions live alongside refresh tokens in AuthStore.
+	v1.Get("/devices", authHandler.ListDevices)
+	v1.Delete("/devices/others", authHandler.RevokeOtherDevices)
+	v1.Delete("/devices/:id", authHandler.RevokeDevice)
 
 	lessonStore := lessons.NewLessonStore(db)
 	lessonHandler := lessons.NewHandler(userStore, lessonStore)

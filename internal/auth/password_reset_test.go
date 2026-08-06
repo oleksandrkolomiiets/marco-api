@@ -234,8 +234,9 @@ func TestResetPassword_SetsTheNewPasswordAndSignsThemIn(t *testing.T) {
 func TestResetPassword_RevokesEveryExistingSession(t *testing.T) {
 	user := passwordUser(t, uuid.New(), "ana@example.com", "oldpass1")
 	authStore := newStubAuthStore()
+	existing := seedSession(t, authStore, user.ID, "iPad Pro")
 	require.NoError(t, authStore.SaveRefreshToken(
-		t.Context(), user.ID, "an-existing-session", time.Now().Add(time.Hour)))
+		t.Context(), user.ID, existing.ID, "an-existing-session", time.Now().Add(time.Hour)))
 
 	h, sender := newTestHandlerWithEmail(withUser(user), authStore)
 	app := newResetApp(h)
@@ -245,9 +246,18 @@ func TestResetPassword_RevokesEveryExistingSession(t *testing.T) {
 		`{"email":"ana@example.com","code":"%s","password":"newpass1"}`, sender.Last().Code))
 
 	require.Equal(t, fiber.StatusOK, status)
-	assert.Contains(t, authStore.deletedAll, user.ID)
+	assert.Contains(t, authStore.revokedAllSessions, user.ID)
+	// The device is gone from the list too, not just stripped of its token —
+	// otherwise a reset would leave a phantom entry on the devices screen.
+	assert.True(t, authStore.revokedSessions[existing.ID])
 	_, err := authStore.GetRefreshToken(t.Context(), "an-existing-session")
 	assert.ErrorIs(t, err, pgx.ErrNoRows)
+
+	// The device that did the reset gets a session of its own, so it shows up
+	// on the devices screen instead of the account looking signed in nowhere.
+	live, err := authStore.ListSessions(t.Context(), user.ID)
+	require.NoError(t, err)
+	assert.Len(t, live, 1)
 }
 
 func TestResetPassword_CodeWorksOnlyOnce(t *testing.T) {

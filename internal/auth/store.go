@@ -13,6 +13,7 @@ import (
 type RefreshToken struct {
 	ID        uuid.UUID
 	UserID    uuid.UUID
+	SessionID uuid.UUID
 	TokenHash string
 	ExpiresAt time.Time
 }
@@ -29,7 +30,12 @@ type PasswordResetToken struct {
 }
 
 type AuthStore interface {
-	SaveRefreshToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
+	// SessionStore is embedded rather than injected separately: sessions and
+	// refresh tokens are written together on every sign-in and rotation, and
+	// splitting them would mean two stubs to keep consistent in tests.
+	SessionStore
+
+	SaveRefreshToken(ctx context.Context, userID, sessionID uuid.UUID, tokenHash string, expiresAt time.Time) error
 	GetRefreshToken(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	DeleteRefreshToken(ctx context.Context, tokenHash string) error
 	DeleteAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
@@ -62,7 +68,9 @@ func NewAuthStore(pool *pgxpool.Pool) AuthStore {
 	return &pgxStore{pool: pool}
 }
 
-func (s *pgxStore) SaveRefreshToken(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+func (s *pgxStore) SaveRefreshToken(
+	ctx context.Context, userID, sessionID uuid.UUID, tokenHash string, expiresAt time.Time,
+) error {
 	// Every sign-in/refresh inserts a row and nothing else removes expired
 	// ones, so the table would grow without bound. Purge this user's expired
 	// tokens opportunistically in the same round trip as the insert.
@@ -70,19 +78,21 @@ func (s *pgxStore) SaveRefreshToken(ctx context.Context, userID uuid.UUID, token
 		WITH purged AS (
 			DELETE FROM refresh_tokens WHERE user_id = $1 AND expires_at < NOW()
 		)
-		INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
-		userID, tokenHash, expiresAt,
+		INSERT INTO refresh_tokens (user_id, session_id, token_hash, expires_at)
+		VALUES ($1, $2, $3, $4)`,
+		userID, sessionID, tokenHash, expiresAt,
 	)
 	return err
 }
 
 func (s *pgxStore) GetRefreshToken(ctx context.Context, tokenHash string) (*RefreshToken, error) {
 	row := s.pool.QueryRow(ctx,
-		`SELECT id, user_id, token_hash, expires_at FROM refresh_tokens WHERE token_hash = $1`,
+		`SELECT id, user_id, session_id, token_hash, expires_at
+		   FROM refresh_tokens WHERE token_hash = $1`,
 		tokenHash,
 	)
 	var t RefreshToken
-	if err := row.Scan(&t.ID, &t.UserID, &t.TokenHash, &t.ExpiresAt); err != nil {
+	if err := row.Scan(&t.ID, &t.UserID, &t.SessionID, &t.TokenHash, &t.ExpiresAt); err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, pgx.ErrNoRows
 		}

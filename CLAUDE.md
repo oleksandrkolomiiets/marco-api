@@ -37,6 +37,8 @@ Cross-cutting packages (not domains):
 
 All `/api/v1/*` routes require `Authorization: Bearer <access_token>`. Auth endpoints are rate-limited (10/min per IP). The full wiring lives in `internal/routes/routes.go` — keep this table in sync when adding routes.
 
+**Device sessions.** A sign-in creates a row in `sessions` and the access token carries its id as the `sid` claim; `/auth/refresh` rotates the refresh token but keeps the session, which is what lets "Connected devices" show when a device first signed in. The auth middleware checks the session is still live on every request (one PK lookup) — without that, signing a device out would leave it a full access-token lifetime of API access. A revoked session answers `401 {"error":"session_revoked"}`, which the app treats as "clear the session" rather than "try refreshing". Clients identify themselves with the `X-Device-Name`, `X-Device-Platform` and `X-App-Version` headers; all three are optional and an unnamed device is a normal state, not an error. `/auth/signout` ends only the calling device.
+
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | liveness + DB ping |
@@ -47,6 +49,9 @@ All `/api/v1/*` routes require `Authorization: Bearer <access_token>`. Auth endp
 | POST | `/auth/forgot-password` | mail a 6-digit reset code (always 200, never reveals whether the address exists) |
 | POST | `/auth/reset-password` | exchange email + code + new password for a fresh session |
 | GET/PATCH | `/api/v1/me` | profile read/update |
+| GET | `/api/v1/devices` | signed-in device sessions, `current` marks the caller |
+| DELETE | `/api/v1/devices/others` | sign out every device except the caller |
+| DELETE | `/api/v1/devices/:id` | sign out one device |
 | GET | `/api/v1/lessons`, `/api/v1/lessons/:slug` | curriculum |
 | PATCH | `/api/v1/lessons/:slug/progress` | viewed/learned/mastered |
 | GET | `/api/v1/chat/messages` | paginated history (`limit`, `before`) |
