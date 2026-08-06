@@ -1,0 +1,31 @@
+migrations/seed_exam.sql
+  s_a0286b603db96d::t_d14d2e9d6909ae 24-34
+migrations/000021_drop_common_mistake_pct.up.sql
+  s_a0286b603db96d::t_5d3a6bb25c9a2f 1-8
+migrations/000021_drop_common_mistake_pct.down.sql
+  s_a0286b603db96d::t_fd0d12cdbbcec4 1-8
+internal/seeder/curriculum.go
+  s_a0286b603db96d::t_cc39de4f80bb65 57-61,136
+internal/seeder/curriculum_test.go
+  s_a0286b603db96d::t_6eae0b06e93e0a 5,35-38,40-41,80-127
+internal/lessons/store.go
+  s_a0286b603db96d::t_8236a070407d7b 36
+internal/seeder/runner.go
+  s_a0286b603db96d::t_8236a070407d7b 47,49,54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "cab5afd799ab0d64432830ceb64f409ad5ca789c",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
