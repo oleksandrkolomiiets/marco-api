@@ -157,6 +157,8 @@ func TestCleanContent_StripsAllTokens(t *testing.T) {
 		`[MATCH_PREP: {"mode":"create","scheduled_at":"2026-05-21T20:00:00Z","drills":[{"title":"Bandeja","duration_seconds":300}]}] ` +
 		`Try [LESSON_REF: bandeja-basics | "Bandeja Basics"] next.`
 
+	// The log and prep tokens vanish; the lesson ref leaves its title behind so
+	// the sentence Marco wrote still has a subject.
 	got := CleanContent(in)
-	assert.Equal(t, "Try  next.", got)
+	assert.Equal(t, "Try Bandeja Basics next.", got)
 }

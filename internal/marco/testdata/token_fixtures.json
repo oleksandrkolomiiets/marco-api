@@ -1,5 +1,5 @@
 {
-  "_readme": "Canonical test vectors for Marco's inline token grammar ([LESSON_REF: ...], [MATCH_LOG: ...], [MATCH_PREP: ...]). IDENTICAL copies live in marco-api (internal/marco/testdata/token_fixtures.json) and marco-app (src/components/chat/token_fixtures.json) — update BOTH together; each repo's CI runs its implementation against its copy. The grammar itself is defined in marco-api internal/marco/prompt.md; if the prompt changes the token shapes, these fixtures and both parsers must change with it. Rules for shared cases: tokens must be complete (unterminated tokens are a streaming-only state, covered by the app's prefix property) and lesson-ref titles must not have leading/trailing spaces inside the quotes (the TS parser trims them, the Go parser does not). clean_text is the expected text after removing every token and trimming the ends — interior double spaces left by token removal are preserved, but a run of two or more blank LINES collapses to one, so a token written on its own line does not leave a hole in the rendered bubble. match_log / match_prep are server-side parse expectations (null = no valid token; match_prep compares mode and id, last valid token wins).",
+  "_readme": "Canonical test vectors for Marco's inline token grammar ([LESSON_REF: ...], [MATCH_LOG: ...], [MATCH_PREP: ...]). IDENTICAL copies live in marco-api (internal/marco/testdata/token_fixtures.json) and marco-app (src/components/chat/token_fixtures.json) — update BOTH together; each repo's CI runs its implementation against its copy. The grammar itself is defined in marco-api internal/marco/prompt.md; if the prompt changes the token shapes, these fixtures and both parsers must change with it. Rules for shared cases: tokens must be complete (unterminated tokens are a streaming-only state, covered by the app's prefix property) and lesson-ref titles must not have leading/trailing spaces inside the quotes (the TS parser trims them, the Go parser does not). clean_text is the expected text after resolving every token and trimming the ends — a [LESSON_REF: ...] is replaced by its title (Marco writes it inline, so deleting it would gut the sentence; the tappable card is rendered separately from the extracted refs), while [MATCH_LOG: ...] and [MATCH_PREP: ...] are removed outright — interior double spaces left by token removal are preserved, but a run of two or more blank LINES collapses to one, so a token written on its own line does not leave a hole in the rendered bubble. match_log / match_prep are server-side parse expectations (null = no valid token; match_prep compares mode and id, last valid token wins).",
   "cases": [
     {
       "name": "plain text without tokens",
@@ -12,7 +12,7 @@
     {
       "name": "lesson ref mid-sentence",
       "input": "Try [LESSON_REF: bandeja-basics | \"Bandeja basics\"] tonight.",
-      "clean_text": "Try  tonight.",
+      "clean_text": "Try Bandeja basics tonight.",
       "lesson_refs": [
         {
           "id": "bandeja-basics",
@@ -25,7 +25,7 @@
     {
       "name": "two lesson refs in order",
       "input": "Start with [LESSON_REF: ready-position | \"Ready position\"] then [LESSON_REF: forehand-drive | \"Forehand drive\"].",
-      "clean_text": "Start with  then .",
+      "clean_text": "Start with Ready position then Forehand drive.",
       "lesson_refs": [
         {
           "id": "ready-position",
@@ -42,7 +42,7 @@
     {
       "name": "underscore id and unicode title at start",
       "input": "[LESSON_REF: vib_01 | \"Víbora intro\"] first.",
-      "clean_text": "first.",
+      "clean_text": "Víbora intro first.",
       "lesson_refs": [
         {
           "id": "vib_01",
@@ -141,7 +141,7 @@
     {
       "name": "all three token types in one message",
       "input": "Good session! [LESSON_REF: net-play | \"Net play\"] [MATCH_LOG: {\"result\":\"won\",\"played_on\":\"2026-06-11\"}] [MATCH_PREP: {\"mode\":\"create\",\"scheduled_at\":\"2026-06-13T19:00:00Z\"}] Rest tomorrow.",
-      "clean_text": "Good session!    Rest tomorrow.",
+      "clean_text": "Good session! Net play   Rest tomorrow.",
       "lesson_refs": [
         {
           "id": "net-play",

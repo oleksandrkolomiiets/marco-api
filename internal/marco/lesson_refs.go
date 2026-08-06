@@ -23,7 +23,13 @@ var blankLineRunRegex = regexp.MustCompile(`\n[ \t]*\n(?:[ \t]*\n)+`)
 // [MATCH_PREP:...]) from text so stored assistant messages can be returned to
 // the client without raw prompt artefacts.
 func CleanContent(text string) string {
-	text = lessonRefRegex.ReplaceAllString(text, "")
+	// Substitute the title, don't delete it. Marco is told to write the token
+	// inline ("the next step is [LESSON_REF: ...]"), so removing it outright
+	// left the sentence without its subject — on screen that read "I'd begin
+	// with the foundations of net play: . That gives you the core mechanics".
+	// The tappable card is rendered separately from ParseLessonRefs, so the
+	// title appearing in the prose is the mention, not a duplicate of the card.
+	text = lessonRefRegex.ReplaceAllString(text, "$2")
 	text = matchLogRegex.ReplaceAllString(text, "")
 	text = CleanMatchPrepTokens(text)
 	// A token that sat on a line of its own leaves the blank lines that framed
