@@ -1,0 +1,28 @@
+internal/marco/prompt.md
+  s_a0286b603db96d::t_91d5092e5831ff 206-213
+  s_a0286b603db96d::t_ba4b2072d98645 297-302
+internal/marco/relative_day_test.go
+  s_a0286b603db96d::t_864b4cbd235203 1-103
+internal/marco/context.go
+  s_a0286b603db96d::t_a1190d894748d3 37-50,58-73
+  s_a0286b603db96d::t_fd8647dca69f40 129,131,186,369,405-406
+  s_a0286b603db96d::t_d71aa669ef6c87 74-75
+internal/marco/testdata/golden_context.json
+  s_a0286b603db96d::t_58282898e26d80 3,52,62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "a14052ccfb66486441818c0185fcac65ccce732d",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
