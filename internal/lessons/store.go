@@ -33,7 +33,7 @@ SELECT
   l.id, l.slug, l.title, l.level, l.order_index,
   l.tagline, l.focus,
   l.video_url, l.thumbnail_url, l.duration_seconds,
-  l.common_mistake_pct, l.common_mistake_text,
+  l.common_mistake_text,
   l.is_free, l.published, l.created_at,
   COALESCE(
     (SELECT json_agg(
@@ -76,7 +76,6 @@ func scanLesson(s scanner) (*Lesson, error) {
 		&l.VideoURL,
 		&l.ThumbnailURL,
 		&l.DurationSeconds,
-		&l.CommonMistakePct,
 		&l.CommonMistakeText,
 		&l.IsFree,
 		&l.Published,

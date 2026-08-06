@@ -20,7 +20,6 @@ type Cue struct {
 }
 
 type Mistake struct {
-	Pct  int
 	Text string
 }
 
@@ -55,8 +54,11 @@ var (
 	// Indented cue: "  0:03 — V between thumb and index finger sits on the top bevel"
 	// Allow em-dash, en-dash, or hyphen.
 	cueRE = regexp.MustCompile(`^\s+0:(\d+)\s+[—–-]\s+(.+)$`)
-	// Common Mistake (62% of beginners): ...
-	mistakeRE = regexp.MustCompile(`^Common Mistake\s*\((\d+)%[^)]*\):\s*(.+)$`)
+	// Common Mistake (62% of beginners): ...  — or without the parenthetical.
+	// The percentage is still parsed off the existing curriculum file and then
+	// dropped: nothing ever measured it, so it is no longer stored or shown.
+	// Optional here so a curriculum written without one still reads.
+	mistakeRE = regexp.MustCompile(`^Common Mistake\s*(?:\([^)]*\))?:\s*(.+)$`)
 	// Drill: Grip Freeze · 5 min · Recommended · After every shot, ...
 	drillRE = regexp.MustCompile(`^Drill:\s+(.+?)\s+·\s+(\d+)\s*min\s+·\s+(Recommended|Optional)\s+·\s+(.+)$`)
 )
@@ -131,8 +133,7 @@ func Parse(r io.Reader) ([]Lesson, error) {
 
 		case mistakeRE.MatchString(line):
 			m := mistakeRE.FindStringSubmatch(line)
-			pct, _ := strconv.Atoi(m[1])
-			current.Mistake = Mistake{Pct: pct, Text: strings.TrimSpace(m[2])}
+			current.Mistake = Mistake{Text: strings.TrimSpace(m[1])}
 
 		case strings.HasPrefix(line, "Drill:"):
 			m := drillRE.FindStringSubmatch(line)

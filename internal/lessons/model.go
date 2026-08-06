@@ -30,7 +30,6 @@ type Lesson struct {
 	ThumbnailURL      *string    `json:"thumbnail_url"`
 	DurationSeconds   *int       `json:"duration_seconds"`
 	CuePoints         []CuePoint `json:"cue_points"`
-	CommonMistakePct  *int       `json:"common_mistake_pct"`
 	CommonMistakeText *string    `json:"common_mistake_text"`
 	Drill             *Drill     `json:"drill"`
 	IsFree            bool       `json:"is_free"`

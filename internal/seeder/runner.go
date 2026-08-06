@@ -44,14 +44,14 @@ func Seed(ctx context.Context, pool *pgxpool.Pool, lessons []Lesson) error {
 			INSERT INTO lessons (
 				slug, title, level, order_index,
 				tagline, focus,
-				common_mistake_pct, common_mistake_text,
+				common_mistake_text,
 				is_free, published
-			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+			) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 			RETURNING id
 		`,
 			slug, l.Title, l.Level, l.Number,
 			l.Tagline, l.Focus,
-			l.Mistake.Pct, l.Mistake.Text,
+			l.Mistake.Text,
 			isFree, true,
 		).Scan(&lessonID)
 		if err != nil {

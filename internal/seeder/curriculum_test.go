@@ -2,6 +2,7 @@ package seeder
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,8 +32,13 @@ func TestParseCurriculum_AllThirty(t *testing.T) {
 	assert.Equal(t, 7, l1.Cues[1].TimestampSeconds)
 	assert.Equal(t, 11, l1.Cues[2].TimestampSeconds)
 	assert.Contains(t, l1.Cues[0].CueText, "V between thumb")
-	assert.Equal(t, 62, l1.Mistake.Pct)
+	// The source line reads "Common Mistake (62% of beginners): …". Nothing
+	// measured that 62%, so it is parsed off and discarded rather than stored
+	// and shown. What has to hold is that stripping it left the coaching text
+	// intact and did not fold the parenthetical into it.
 	assert.Contains(t, l1.Mistake.Text, "frying-pan")
+	assert.NotContains(t, l1.Mistake.Text, "62")
+	assert.NotContains(t, l1.Mistake.Text, "%")
 	assert.Equal(t, "Grip Freeze", l1.Drill.Name)
 	assert.Equal(t, 5, l1.Drill.DurationMinutes)
 	assert.True(t, l1.Drill.IsRecommended)
@@ -70,4 +76,52 @@ func TestSlugify(t *testing.T) {
 	for _, c := range cases {
 		assert.Equal(t, c.want, Slugify(c.in), c.in)
 	}
+}
+
+// lessonSource builds one syntactically complete lesson so the parser can be
+// exercised without the curriculum file, which lives outside the repo.
+func lessonSource(mistakeLine string) string {
+	return strings.Join([]string{
+		"**LESSON 1 · BEGINNER**",
+		"Title: The Continental Grip",
+		`Tagline: "Hold it like a hammer."`,
+		"Focus: Establish the one grip.",
+		"Watch For:",
+		"    0:3 — V between thumb and index finger",
+		"    0:7 — Wrist stays neutral",
+		"    0:11 — Light pressure",
+		mistakeLine,
+		"Drill: Grip Freeze · 5 min · Recommended · Freeze and check the V.",
+	}, "\n")
+}
+
+// The percentage in "Common Mistake (62% of beginners):" is no longer stored,
+// so the parser must read the line with or without it — today's curriculum
+// still carries one, and a rewritten one need not.
+func TestParseCurriculum_MistakeLineWithOrWithoutAPercentage(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+	}{
+		{"with a percentage", "Common Mistake (62% of beginners): Sliding into a frying-pan grip."},
+		{"with a parenthetical but no number", "Common Mistake (most beginners): Sliding into a frying-pan grip."},
+		{"with no parenthetical at all", "Common Mistake: Sliding into a frying-pan grip."},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lessons, err := Parse(strings.NewReader(lessonSource(tt.line)))
+			require.NoError(t, err)
+			require.Len(t, lessons, 1)
+			assert.Equal(t, "Sliding into a frying-pan grip.", lessons[0].Mistake.Text)
+		})
+	}
+}
+
+// A mistake line is still required — dropping the statistic must not make the
+// coaching text optional too.
+func TestParseCurriculum_StillRequiresTheMistakeText(t *testing.T) {
+	src := strings.ReplaceAll(lessonSource("Common Mistake: x"), "Common Mistake: x\n", "")
+	_, err := Parse(strings.NewReader(src))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing common mistake")
 }

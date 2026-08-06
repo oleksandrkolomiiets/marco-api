@@ -21,7 +21,17 @@
 -- question, re-check its citation against the current FIP edition and update
 -- the list above if the numbering has moved.
 
-TRUNCATE exam_questions RESTART IDENTITY CASCADE;
+-- exam_attempts goes with the questions, and must. Truncating questions alone
+-- cascades into exam_attempt_answers but leaves the attempt rows behind, so
+-- every past attempt keeps its score and loses every answer. The results screen
+-- reads the score from the attempt and rebuilds the per-question review from
+-- the answers, so it then renders "6/20" above a grid reading "Correct · 0 ·
+-- Wrong · 20" — the same screen disagreeing with itself.
+--
+-- exam_attempt_answers.question_id is ON DELETE RESTRICT precisely to stop a
+-- question being removed out from under an answer. TRUNCATE CASCADE walks
+-- straight past that, which is what made this quiet.
+TRUNCATE exam_questions, exam_attempts RESTART IDENTITY CASCADE;
 
 WITH q AS (
     INSERT INTO exam_questions (slug, order_index, category, prompt, explanation) VALUES
