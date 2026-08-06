@@ -338,6 +338,77 @@ func TestResetPassword_UnknownEmailLooksLikeAWrongCode(t *testing.T) {
 	assert.Equal(t, wrongCodeBody, unknownBody)
 }
 
+// Matching wording is only half of it. forgot-password answers every address
+// the same, but it only stores a token for an address that has an account, so
+// this endpoint only reached bcrypt when one existed: request a reset, submit a
+// junk code, and a registered address took a bcrypt round while an unregistered
+// one returned in microseconds. That is the enumeration oracle both endpoints
+// exist to close, just spread over two requests.
+//
+// Asserted against a bcrypt round measured on this machine rather than a fixed
+// duration, since the cost varies wildly across hardware.
+func TestResetPassword_RejectionsAllPayForABcryptRound(t *testing.T) {
+	probe := []byte("999999")
+	start := time.Now()
+	_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, probe)
+	oneRound := time.Since(start)
+	require.Greater(t, oneRound, time.Millisecond,
+		"a bcrypt round should be measurable; the baseline is meaningless otherwise")
+
+	// Half a round: comfortably above anything that skipped bcrypt (which lands
+	// in microseconds) and well clear of scheduler noise.
+	floor := oneRound / 2
+
+	withLiveToken := func(t *testing.T) (*fiber.App, string) {
+		t.Helper()
+		user := passwordUser(t, uuid.New(), "ana@example.com", "oldpass1")
+		h, _ := newTestHandlerWithEmail(withUser(user), newStubAuthStore())
+		app := newResetApp(h)
+		_, _ = postJSON(t, app, "/auth/forgot-password", `{"email":"ana@example.com"}`)
+		return app, "ana@example.com"
+	}
+
+	noLiveToken := func(t *testing.T) (*fiber.App, string) {
+		t.Helper()
+		// A real account that never asked for a reset.
+		user := passwordUser(t, uuid.New(), "ana@example.com", "oldpass1")
+		h, _ := newTestHandlerWithEmail(withUser(user), newStubAuthStore())
+		return newResetApp(h), "ana@example.com"
+	}
+
+	unknownEmail := func(t *testing.T) (*fiber.App, string) {
+		t.Helper()
+		h, _ := newTestHandlerWithEmail(withUser(nil), newStubAuthStore())
+		return newResetApp(h), "nobody@example.com"
+	}
+
+	tests := []struct {
+		name  string
+		setup func(*testing.T) (*fiber.App, string)
+	}{
+		{"unknown email", unknownEmail},
+		{"real account with no live code", noLiveToken},
+		{"real account with a live code, wrong guess", withLiveToken},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app, email := tt.setup(t)
+			body := fmt.Sprintf(
+				`{"email":"%s","code":"999999","password":"newpass1"}`, email)
+
+			start := time.Now()
+			status, _ := postJSON(t, app, "/auth/reset-password", body)
+			elapsed := time.Since(start)
+
+			assert.Equal(t, fiber.StatusBadRequest, status)
+			assert.Greater(t, elapsed, floor,
+				"returned in %s against a %s bcrypt round — this path skipped the hash and is distinguishable by timing",
+				elapsed, oneRound)
+		})
+	}
+}
+
 // The password rules are checked before the code is spent, so a rejected
 // password doesn't cost the user their one use of the code.
 func TestResetPassword_WeakPasswordDoesNotConsumeTheCode(t *testing.T) {

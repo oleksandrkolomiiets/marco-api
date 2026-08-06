@@ -47,6 +47,25 @@ type resetPasswordRequest struct {
 	Password string `json:"password"`
 }
 
+// resetCodeRejected answers a failed reset. Pass the submitted code when no
+// real hash was compared, so the burnt bcrypt round matches the timing of a
+// genuine mismatch; pass "" when a comparison already ran. Exactly the reasoning
+// behind credentialsRejected on sign-in, and needed here for the same reason.
+//
+// Identical wording is not enough on its own. forgot-password answers every
+// address the same, but it only creates a token for an address that has an
+// account, and this endpoint only reached bcrypt when a token existed. So the
+// pair of calls — request a reset, then submit a junk code — took ~60ms for a
+// registered address and under a millisecond for an unregistered one, which is
+// the enumeration oracle both endpoints were written to avoid, just spread
+// across two requests.
+func resetCodeRejected(c *fiber.Ctx, unverifiedCode string) error {
+	if unverifiedCode != "" {
+		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(unverifiedCode))
+	}
+	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": invalidResetCodeMessage})
+}
+
 // generateResetCode returns a zero-padded 6-digit code from crypto/rand.
 // math/rand would be seeded predictably enough to guess.
 func generateResetCode() (string, error) {
@@ -154,9 +173,9 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 
 	user, err := h.users.GetUserByEmail(c.Context(), req.Email)
 	if errors.Is(err, pgx.ErrNoRows) {
-		// Same wording as a bad code: this endpoint must not become the
-		// enumeration oracle that sign-in no longer is.
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": invalidResetCodeMessage})
+		// Same wording AND the same cost as a bad code: this endpoint must not
+		// become the enumeration oracle that sign-in no longer is.
+		return resetCodeRejected(c, req.Code)
 	}
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
@@ -164,7 +183,9 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 
 	token, err := h.auth.GetLivePasswordResetToken(c.Context(), user.ID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": invalidResetCodeMessage})
+		// No live code for a real account looks the same, and costs the same,
+		// as no account at all.
+		return resetCodeRejected(c, req.Code)
 	}
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
@@ -179,7 +200,7 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 				log.Printf("password reset: burn guessed token for %s: %v", user.ID, expErr)
 			}
 		}
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": invalidResetCodeMessage})
+		return resetCodeRejected(c, "")
 	}
 
 	// Spend the code before touching the password. If two requests race with
@@ -189,7 +210,7 @@ func (h *Handler) ResetPassword(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	if !consumed {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": invalidResetCodeMessage})
+		return resetCodeRejected(c, "")
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
