@@ -50,6 +50,53 @@ func LoadSeeder() (*SeederConfig, error) {
 	return cfg, nil
 }
 
+// QAConfig is a minimal config for the QA harness. It talks to an already
+// running server over HTTP and only needs to reach the database (to load
+// fixtures) and mint access tokens for the fixture users.
+type QAConfig struct {
+	Port          string
+	DatabaseURL   string
+	JWTSecret     string
+	JWTAccessTTL  time.Duration
+	JWTRefreshTTL time.Duration
+}
+
+// LoadQA loads the QA-only env. Same reasoning as LoadSeeder: the harness used
+// the server's Load(), so adding a required variable to the server broke a
+// tool that never touches it — `make qa` started failing with
+// "SENDGRID_API_KEY is required" on every machine whose .env predated the
+// password-reset work, for a harness that sends no email. The server it calls
+// is what needs Google, Anthropic and SendGrid credentials.
+func LoadQA() (*QAConfig, error) {
+	_ = godotenv.Load()
+
+	accessTTL, err := parseDuration("JWT_ACCESS_TTL", 15*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	refreshTTL, err := parseDuration("JWT_REFRESH_TTL", 30*24*time.Hour)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &QAConfig{
+		Port:          getEnv("PORT", "8080"),
+		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		JWTSecret:     os.Getenv("JWT_SECRET"),
+		JWTAccessTTL:  accessTTL,
+		JWTRefreshTTL: refreshTTL,
+	}
+	if cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL is required")
+	}
+	// The harness signs its own tokens, so a mismatch here means every request
+	// comes back 401 rather than anything that looks like a config problem.
+	if len(cfg.JWTSecret) < 32 {
+		return nil, fmt.Errorf("JWT_SECRET is required and must be at least 32 characters")
+	}
+	return cfg, nil
+}
+
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 

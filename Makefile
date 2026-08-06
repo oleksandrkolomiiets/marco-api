@@ -82,5 +82,5 @@ seed:
 qa: ## Run the Marco QA harness against the local server
 	@./scripts/run_qa.sh
 
-qa-group: ## Run a single group, e.g. make qa-group GROUP=D — runs D1,D2,D3,D4
-	@./scripts/run_qa.sh --filter $(GROUP)1,$(GROUP)2,$(GROUP)3,$(GROUP)4
+qa-group: ## Run a single group, e.g. make qa-group GROUP=D — runs every D case
+	@./scripts/run_qa.sh --group $(GROUP)

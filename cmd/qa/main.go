@@ -37,6 +37,7 @@ var fixturesSQL string
 type flags struct {
 	baseURL  string
 	filter   string
+	group    string
 	noPrompt bool
 	output   string
 	wipe     bool
@@ -46,6 +47,7 @@ func parseFlags() flags {
 	var f flags
 	flag.StringVar(&f.baseURL, "base-url", "", "Base URL of the local marco-api server (default http://localhost:$PORT)")
 	flag.StringVar(&f.filter, "filter", "", "Comma-separated case IDs to run (e.g. A1,D1,D2). Empty = all.")
+	flag.StringVar(&f.group, "group", "", "Run every case whose ID starts with this letter (e.g. E). Empty = all.")
 	flag.BoolVar(&f.noPrompt, "no-prompt", false, "Skip the cost warning and the interactive pass/fail prompts (does NOT bypass the wipe guard)")
 	flag.StringVar(&f.output, "output", "docs/qa_results_v1.0.md", "Markdown file to append results to")
 	flag.BoolVar(&f.wipe, "wipe", false, "Permit the fixture seed to TRUNCATE users CASCADE when the target database holds real accounts")
@@ -63,7 +65,7 @@ func main() {
 	ui := newUI(os.Stdout)
 	stdin := bufio.NewReader(os.Stdin)
 
-	cfg, err := config.Load()
+	cfg, err := config.LoadQA()
 	if err != nil {
 		fatal(ui, "load config: %v", err)
 	}
@@ -77,7 +79,11 @@ func main() {
 		f.baseURL = "http://localhost:" + cfg.Port
 	}
 
-	selected, err := filterCases(Cases, f.filter)
+	selected, err := groupCases(Cases, f.group)
+	if err != nil {
+		fatal(ui, "%v", err)
+	}
+	selected, err = filterCases(selected, f.filter)
 	if err != nil {
 		fatal(ui, "%v", err)
 	}
@@ -151,7 +157,7 @@ func main() {
 	defer out.Close()
 
 	httpClient := &http.Client{Timeout: 120 * time.Second}
-	var passed, failed, skipped int
+	var passed, failed, skipped, logged int
 	// Which cases actually ran, so a follow-up case can tell whether the turn it
 	// continues is present in this selection.
 	ran := map[string]bool{}
@@ -223,6 +229,7 @@ func main() {
 		}
 
 		if f.noPrompt {
+			logged++
 			appendResult(out, c, "logged", "no-prompt mode")
 			continue
 		}
@@ -246,7 +253,7 @@ func main() {
 			appendResult(out, c, "skip", "")
 		case "q", "quit":
 			ui.plain("Quitting.\n")
-			summarise(ui, passed, failed, skipped)
+			summarise(ui, passed, failed, skipped, logged)
 			return
 		default:
 			ui.plain("Unrecognised, treating as skip.\n")
@@ -256,7 +263,7 @@ func main() {
 		ui.plain("\n")
 	}
 
-	summarise(ui, passed, failed, skipped)
+	summarise(ui, passed, failed, skipped, logged)
 }
 
 // errServerUnreachable signals that the local server is down — main lifts
@@ -344,6 +351,30 @@ func isConnectionRefused(err error) bool {
 		strings.Contains(err.Error(), "dial tcp")
 }
 
+// groupCases keeps every case whose ID begins with the given letter.
+//
+// `make qa-group GROUP=X` used to expand to --filter X1,X2,X3,X4, which
+// assumed every group holds exactly four cases. Only three of the nine do, so
+// the target failed with "unknown case ids" for A, B, D, E, F and G — the
+// documented example, GROUP=D, among them. Selecting by prefix means adding or
+// removing a case cannot break it again.
+func groupCases(all []TestCase, group string) ([]TestCase, error) {
+	group = strings.ToUpper(strings.TrimSpace(group))
+	if group == "" {
+		return all, nil
+	}
+	var out []TestCase
+	for _, c := range all {
+		if strings.HasPrefix(strings.ToUpper(c.ID), group) {
+			out = append(out, c)
+		}
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no cases in group %q", group)
+	}
+	return out, nil
+}
+
 // filterCases keeps the original ordering but limits to the IDs in the
 // filter spec. An empty filter returns the full list.
 func filterCases(all []TestCase, filter string) ([]TestCase, error) {
@@ -397,9 +428,18 @@ func sanitise(s string) string {
 	return s
 }
 
-func summarise(ui *ui, passed, failed, skipped int) {
+func summarise(ui *ui, passed, failed, skipped, logged int) {
 	ui.plain("\n")
 	ui.bold("Summary: %d passed, %d failed, %d skipped", passed, failed, skipped)
+	// --no-prompt cannot grade anything, so without this a run of twenty cases
+	// signs off as "0 passed, 0 failed" — indistinguishable from a clean sweep
+	// and from having run nothing at all. The replies are in the results file;
+	// say so rather than implying they were judged.
+	if logged > 0 {
+		// bold() deliberately omits the newline, hence the explicit one.
+		ui.plain("\n")
+		ui.bold("%d logged for review (--no-prompt grades nothing)", logged)
+	}
 	ui.plain("\n")
 }
 
