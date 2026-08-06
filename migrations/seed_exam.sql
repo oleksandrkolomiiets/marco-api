@@ -1,6 +1,25 @@
 -- Rules-exam content. Idempotent: nukes existing exam_questions (cascades to
 -- exam_options and exam_attempt_answers) and re-inserts the full set, so it's
 -- safe to re-run after editing.
+--
+-- SOURCE OF TRUTH: "RULES OF PADEL", International Padel Federation, review of
+-- application 01.01.2026 — https://www.padelfip.com/wp-content/uploads/2025/12/FIP_Rules-of-Padel.pdf
+-- The numbered rules in that edition are:
+--   1 Score in a Game        7 Serve Fault              13 Point Lost
+--   2 Times                  8 Return of Serve          14 Correct Return
+--   3 Position of Players    9 Repeat/"Let" and "Net"   15 Point Won
+--   4 Choice of Sides        10 Repetition/"Let" Point  16 Authorized Out-of-Court Play
+--   5 Changes of Sides       11 Interference            17 Change of Balls
+--   6 The Serve              12 Ball in Play
+--
+-- Every `explanation` below cites a rule and sub-clause from that document and
+-- was checked against it question by question. They were previously wrong on
+-- twelve of the twenty: serving cited Rule 5 (Changes of Sides) rather than
+-- Rule 6, changing ends cited Rule 17 (Change of Balls) rather than Rule 5, the
+-- double bounce and the out-of-court chase cited Rule 11 (Interference), and so
+-- on. The answers were all correct; only the references were not. If you edit a
+-- question, re-check its citation against the current FIP edition and update
+-- the list above if the numbering has moved.
 
 TRUNCATE exam_questions RESTART IDENTITY CASCADE;
 
@@ -8,64 +27,64 @@ WITH q AS (
     INSERT INTO exam_questions (slug, order_index, category, prompt, explanation) VALUES
     ('serve-direction', 1, 'Service · direction',
      'You serve from your RIGHT box. The ball clears the net but lands straight across, in the opponents'' LEFT box. Call?',
-     'FIP · Rule 5 · the serve must travel diagonally into the receiver''s service box.'),
+     'FIP · Rule 6.5 · the serve must travel diagonally into the receiver''s service box.'),
     ('contact-height', 2, 'Service · contact height',
      'Your bounce comes up high. You strike the ball cleanly at chest height into the correct box. Call?',
-     'FIP · Rule 5 · service contact must be at or below waist height.'),
+     'FIP · Rule 6.4 · the ball must be struck at or below waist height, with one foot on the ground.'),
     ('foot-fault', 3, 'Service · foot fault',
      'You step on the service line as you make contact. The ball lands cleanly in the correct box. Call?',
-     'FIP · Rule 6 · the server''s feet must remain behind the service line until the ball is struck.'),
+     'FIP · Rule 6.3 · the server may not touch the service line or the centre line; Rule 7.1(a) makes that a fault.'),
     ('bounce-first', 4, 'Service · bounce first',
      'You toss the ball and strike it out of the air. It lands cleanly in the correct service box. Call?',
-     'FIP · Rule 5 · the ball must bounce on the floor before the serve is struck.'),
+     'FIP · Rule 6.2 · the server must bounce the ball on the ground before striking it.'),
     ('fence-after-bounce', 5, 'Service · fence contact',
      'Your serve bounces inside the correct service box, then hits the side mesh fence. Call?',
-     'FIP · Rule 7 · on the serve, contact with the side fence after the bounce is a fault.'),
+     'FIP · Rule 7.1(e) · a serve landing in the box then touching the metallic fence before the second bounce is a fault.'),
     ('back-glass-live', 6, 'Service · back glass',
      'Your serve bounces inside the correct service box, then hits the back glass. Call?',
-     'FIP · Rule 7 · a serve that bounces in the box and then hits the back glass stays in play.'),
+     'FIP · Rule 12.3 · only the metallic fence faults a serve (Rule 7.1e) — off the back glass the ball stays in play.'),
     ('net-cord-let', 7, 'Service · let',
      'Your serve clips the net cord, drops into the correct service box, no fence contact. Call?',
-     'FIP · Rule 8 · a serve that clips the net and lands in the correct box is a let — replayed with no penalty.'),
+     'FIP · Rule 9.1(a) · a serve that touches the net and lands in the correct box is a "net" — replayed, no penalty.'),
     ('receiver-volleys', 8, 'Return · serve volley',
      'Your serve flies toward the box. The receiver steps in and volleys it out of the air before it bounces. Call?',
-     'FIP · Rule 10 · the receiver must let the serve bounce before striking it.'),
+     'FIP · Rule 8.1 · the receiver must let the serve bounce; Rule 8.5 gives the point to the server if they hit it first.'),
     ('own-side-wall', 9, 'Wall play · own side',
      'Their shot bounces on your court, hits your back glass, comes back up. You smash it over the net. Call?',
-     'FIP · Rule 12 · on your own side, the walls are part of the playing surface — playing the ball off your own wall is legal.'),
+     'FIP · Rule 12.3 · after bouncing on your floor the ball stays live off your own walls; Rule 14.1(b) makes the return good.'),
     ('opp-side-wall', 10, 'Wall play · opp side',
      'Your shot clears the net and hits the opponents'' back glass BEFORE bouncing on their floor. Call?',
-     'FIP · Rule 12 · on the opponent''s side, the ball must bounce on the floor before touching any wall.'),
+     'FIP · Rule 13.1(g) · a ball reaching the opponents'' wall without bouncing on their floor first loses the point.'),
     ('body-contact', 11, 'Rally · body contact',
      'Your partner is at the net. The opponents'' shot strikes your partner on the shoulder before bouncing. Call?',
-     'FIP · Rule 13 · the ball touching a player (or their clothing) before the second bounce loses the point.'),
+     'FIP · Rule 13.1(k) · a ball hitting any part of a player or their kit other than the racket loses the point.'),
     ('net-touch', 12, 'Rally · net touch',
      'You win a delicate drop volley. Following through, your racket grazes the top of the net. Call?',
-     'FIP · Rule 13 · any contact with the net by a player or their racket during the point loses the point.'),
+     'FIP · Rule 13.1(a) · player, racket or clothing touching the net, posts or cable while the ball is in play loses the point.'),
     ('double-bounce', 13, 'Rally · double bounce',
      'Defending deep, you let the ball bounce, then it bounces a SECOND time before you can return it. Call?',
-     'FIP · Rule 11 · the ball may bounce only once on your side before being returned.'),
+     'FIP · Rule 13.1(c) · the ball bouncing a second time before it is returned loses the point.'),
     ('out-of-court-chase', 14, 'Rally · out of court',
      'Their lob bounces in your court, then sails over the side glass and out of the cage. You sprint out the door and return it. Call?',
-     'FIP · Rule 15 · once the ball has bounced inside, a player may leave the court to play the ball back through an opening.'),
+     'FIP · Rule 16 · leaving the court to play the ball is legal only where the court is built with the safety area for it.'),
     ('ceiling-clip', 15, 'Rally · ceiling',
      'Indoor club, low ceiling. Your lob clips the ceiling on the way over the net. Call?',
-     'FIP · Rule 13 · contact with the ceiling, lights or any fixed object above the court loses the point.'),
+     'FIP · Rule 14.1(d) · the ceiling only counts as a good return after the ball has bounced in the opponents'' court.'),
     ('reaching-over-net', 16, 'Rally · over the net',
      'Their drop shot has wicked backspin and starts heading back over the net before you can hit it. You reach across, over their side, and tap it. Call?',
-     'FIP · Rule 13 · if the ball bounced on your side and the spin carries it back, you may reach over the net to play it without touching the net itself.'),
+     'FIP · Rule 14.1(g) · a ball that bounced in and spun back may be played over the net, touching neither net nor their court.'),
     ('ball-in-then-out', 17, 'Rally · ball flies out',
      'Their smash bounces hard in your court, then ricochets over the back fence and out. Nobody chases it. Call?',
-     'FIP · Rule 11 · once the ball has bounced inside your court, it is a legal shot — failing to return it loses the point.'),
+     'FIP · Rule 13.1(d)-(e) · it bounced in, so the shot was good — leaving the court afterwards does not undo that.'),
     ('side-changes', 18, 'Match · side changes',
      'Score is 3–2 in the first set. This game ends. Do the teams change sides of the court?',
-     'FIP · Rule 17 · teams switch ends after every odd total of games played (1, 3, 5, 7, …).'),
+     'FIP · Rule 5.1 · sides change after the 1st, 3rd and every subsequent odd game of the set.'),
     ('golden-point-side', 19, 'Scoring · golden point',
      'Game hits deuce in a golden-point format. Who decides which side the receiver takes the deciding point from?',
-     'FIP · Rule 9 · in golden-point format, the receiving pair chooses which side receives the deciding point.'),
+     'FIP · Rule 1, Golden Point · the receiving pair picks the side for the deciding point and may not swap positions.'),
     ('racket-cord-snap', 20, 'Rally · racket cord snap',
      'Mid-rally, your safety cord snaps and your racket flies onto the court. Call?',
-     'FIP · Rule 13 · losing your racket during the point ends the rally immediately — the opponents win the point.')
+     'FIP · Rule 13.1(r) · breaking your safety cord or dropping your racket loses the point immediately.')
     RETURNING id, slug
 )
 INSERT INTO exam_options (question_id, order_index, text, is_correct)
