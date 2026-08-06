@@ -77,7 +77,7 @@ WITH q AS (
      'Their smash bounces hard in your court, then ricochets over the back fence and out. Nobody chases it. Call?',
      'FIP · Rule 13.1(d)-(e) · it bounced in, so the shot was good — leaving the court afterwards does not undo that.'),
     ('side-changes', 18, 'Match · side changes',
-     'Score is 3–2 in the first set. This game ends. Do the teams change sides of the court?',
+     'A game ends and the score is now 3–2 in the first set. Do the teams change sides of the court?',
      'FIP · Rule 5.1 · sides change after the 1st, 3rd and every subsequent odd game of the set.'),
     ('golden-point-side', 19, 'Scoring · golden point',
      'Game hits deuce in a golden-point format. Who decides which side the receiver takes the deciding point from?',
