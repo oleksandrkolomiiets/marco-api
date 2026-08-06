@@ -46,6 +46,10 @@ func (s *stubUserStore) UpdateUser(_ context.Context, _ uuid.UUID, _ users.Updat
 	return s.user, s.err
 }
 
+func (s *stubUserStore) UpdatePassword(_ context.Context, _ uuid.UUID, _ string) error {
+	return s.err
+}
+
 var _ users.UserStore = (*stubUserStore)(nil)
 
 type upsertCall struct {

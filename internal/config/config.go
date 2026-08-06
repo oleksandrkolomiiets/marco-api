@@ -16,6 +16,14 @@ type Config struct {
 	JWTAccessTTL    time.Duration
 	JWTRefreshTTL   time.Duration
 	AnthropicAPIKey string
+
+	SendGridAPIKey    string
+	SendGridFromEmail string
+	SendGridFromName  string
+	// SendGridBaseURL overrides SendGrid's host. Left empty in every real
+	// deployment; it exists so a local run can point at a stand-in instead of
+	// mailing people from a dev machine.
+	SendGridBaseURL string
 }
 
 // SeederConfig is a minimal config for the seeder binary — only the fields
@@ -62,6 +70,11 @@ func Load() (*Config, error) {
 		JWTAccessTTL:    accessTTL,
 		JWTRefreshTTL:   refreshTTL,
 		AnthropicAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
+
+		SendGridAPIKey:    os.Getenv("SENDGRID_API_KEY"),
+		SendGridFromEmail: os.Getenv("SENDGRID_FROM_EMAIL"),
+		SendGridFromName:  getEnv("SENDGRID_FROM_NAME", "Marco"),
+		SendGridBaseURL:   os.Getenv("SENDGRID_BASE_URL"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -75,6 +88,15 @@ func Load() (*Config, error) {
 	}
 	if cfg.AnthropicAPIKey == "" {
 		return nil, fmt.Errorf("ANTHROPIC_API_KEY is required")
+	}
+	if cfg.SendGridAPIKey == "" {
+		return nil, fmt.Errorf("SENDGRID_API_KEY is required")
+	}
+	// SendGrid rejects a send whose From address isn't a verified sender
+	// identity, and it does so at send time with a 403 — long after boot. Fail
+	// at startup instead, where whoever deployed it is still watching.
+	if cfg.SendGridFromEmail == "" {
+		return nil, fmt.Errorf("SENDGRID_FROM_EMAIL is required")
 	}
 
 	return cfg, nil

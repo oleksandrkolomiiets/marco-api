@@ -55,6 +55,10 @@ func (s *stubUserStore) UpdateUser(_ context.Context, id uuid.UUID, params Updat
 	return s.user, nil
 }
 
+func (s *stubUserStore) UpdatePassword(_ context.Context, _ uuid.UUID, _ string) error {
+	return s.err
+}
+
 var _ UserStore = (*stubUserStore)(nil)
 
 func newUsersApp(handler *Handler, userID uuid.UUID) *fiber.App {

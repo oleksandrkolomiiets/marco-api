@@ -6,6 +6,7 @@ import (
 	"marco-api/internal/auth"
 	"marco-api/internal/chat"
 	"marco-api/internal/config"
+	"marco-api/internal/email"
 	"marco-api/internal/exam"
 	"marco-api/internal/health"
 	"marco-api/internal/lessons"
@@ -32,13 +33,22 @@ func Register(app *fiber.App, cfg *config.Config, db *pgxpool.Pool) error {
 	// Unauthenticated routes
 	app.Get("/health", health.NewHandler(db).Check)
 
-	authHandler := auth.NewHandler(userStore, authStore, jwtSvc, cfg)
+	emailSender := email.NewSendGridSender(email.Config{
+		APIKey:    cfg.SendGridAPIKey,
+		FromEmail: cfg.SendGridFromEmail,
+		FromName:  cfg.SendGridFromName,
+		BaseURL:   cfg.SendGridBaseURL,
+	})
+
+	authHandler := auth.NewHandler(userStore, authStore, jwtSvc, cfg, emailSender)
 	authLimiter := middleware.AuthRateLimit()
 	app.Post("/auth/google", authLimiter, authHandler.GoogleSignIn)
 	app.Post("/auth/signup", authLimiter, authHandler.EmailSignUp)
 	app.Post("/auth/signin", authLimiter, authHandler.EmailSignIn)
 	app.Post("/auth/refresh", authLimiter, authHandler.Refresh)
 	app.Post("/auth/signout", authMW, authHandler.SignOut)
+	app.Post("/auth/forgot-password", authLimiter, authHandler.ForgotPassword)
+	app.Post("/auth/reset-password", authLimiter, authHandler.ResetPassword)
 
 	// Authenticated API routes
 	v1 := app.Group("/api/v1", authMW)

@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"marco-api/internal/config"
+	"marco-api/internal/email"
 	"marco-api/internal/users"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,15 +27,23 @@ type Handler struct {
 	auth     AuthStore
 	jwt      *JWTService
 	cfg      *config.Config
+	email    email.Sender
 	validate IDTokenValidator
 }
 
-func NewHandler(userStore users.UserStore, authStore AuthStore, jwtSvc *JWTService, cfg *config.Config) *Handler {
+func NewHandler(
+	userStore users.UserStore,
+	authStore AuthStore,
+	jwtSvc *JWTService,
+	cfg *config.Config,
+	sender email.Sender,
+) *Handler {
 	return &Handler{
 		users:    userStore,
 		auth:     authStore,
 		jwt:      jwtSvc,
 		cfg:      cfg,
+		email:    sender,
 		validate: idtoken.Validate,
 	}
 }

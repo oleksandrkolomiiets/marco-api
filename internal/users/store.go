@@ -14,6 +14,11 @@ type UserStore interface {
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, params UpdateUserParams) (*User, error)
+	// UpdatePassword is deliberately separate from UpdateUser rather than
+	// another UpdateUserParams field: that struct is populated straight from
+	// the PATCH /me request body, and a password hash must never be settable
+	// that way.
+	UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error
 }
 
 type pgxStore struct {
@@ -127,4 +132,17 @@ func (s *pgxStore) UpdateUser(ctx context.Context, id uuid.UUID, p UpdateUserPar
 		return nil, pgx.ErrNoRows
 	}
 	return u, err
+}
+
+func (s *pgxStore) UpdatePassword(ctx context.Context, id uuid.UUID, passwordHash string) error {
+	tag, err := s.pool.Exec(ctx,
+		`UPDATE users SET password_hash = $1 WHERE id = $2`, passwordHash, id,
+	)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"marco-api/internal/config"
+	"marco-api/internal/email"
 	"marco-api/internal/users"
 
 	"github.com/gofiber/fiber/v2"
@@ -34,6 +35,9 @@ type stubUserStore struct {
 	createdParams []users.CreateUserParams
 	byEmailArgs   []string
 	updateCalls   int
+
+	passwordUpdates   []passwordUpdate
+	updatePasswordErr error
 }
 
 func (s *stubUserStore) CreateUser(_ context.Context, p users.CreateUserParams) (*users.User, error) {
@@ -74,17 +78,37 @@ func (s *stubUserStore) UpdateUser(_ context.Context, id uuid.UUID, p users.Upda
 	return s.updateFn(id, p)
 }
 
+func (s *stubUserStore) UpdatePassword(_ context.Context, id uuid.UUID, hash string) error {
+	s.passwordUpdates = append(s.passwordUpdates, passwordUpdate{userID: id, hash: hash})
+	return s.updatePasswordErr
+}
+
 var _ users.UserStore = (*stubUserStore)(nil)
+
+type passwordUpdate struct {
+	userID uuid.UUID
+	hash   string
+}
 
 // stubAuthStore implements AuthStore with an in-memory map keyed by token hash.
 type stubAuthStore struct {
 	tokens     map[string]RefreshToken
 	saveErr    error
 	deletedAll []uuid.UUID
+
+	// Password-reset side. resetTokens is ordered oldest-first, matching the
+	// real store's "newest live token wins" read.
+	resetTokens    []*PasswordResetToken
+	consumedAt     map[uuid.UUID]time.Time
+	lastSentAt     time.Time
+	createResetErr error
 }
 
 func newStubAuthStore() *stubAuthStore {
-	return &stubAuthStore{tokens: map[string]RefreshToken{}}
+	return &stubAuthStore{
+		tokens:     map[string]RefreshToken{},
+		consumedAt: map[uuid.UUID]time.Time{},
+	}
 }
 
 func (s *stubAuthStore) SaveRefreshToken(_ context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error {
@@ -118,11 +142,94 @@ func (s *stubAuthStore) DeleteAllUserRefreshTokens(_ context.Context, userID uui
 	return nil
 }
 
+func (s *stubAuthStore) CreatePasswordResetToken(
+	_ context.Context, userID uuid.UUID, codeHash string, expiresAt time.Time,
+) error {
+	if s.createResetErr != nil {
+		return s.createResetErr
+	}
+	// Mirror the real store: a new code supersedes every live one.
+	now := time.Now()
+	for _, t := range s.resetTokens {
+		if _, done := s.consumedAt[t.ID]; !done {
+			s.consumedAt[t.ID] = now
+		}
+	}
+	s.resetTokens = append(s.resetTokens, &PasswordResetToken{
+		ID: uuid.New(), UserID: userID, CodeHash: codeHash,
+		ExpiresAt: expiresAt, CreatedAt: now,
+	})
+	s.lastSentAt = now
+	return nil
+}
+
+func (s *stubAuthStore) GetLivePasswordResetToken(
+	_ context.Context, userID uuid.UUID,
+) (*PasswordResetToken, error) {
+	for i := len(s.resetTokens) - 1; i >= 0; i-- {
+		t := s.resetTokens[i]
+		if t.UserID != userID {
+			continue
+		}
+		if _, done := s.consumedAt[t.ID]; done {
+			continue
+		}
+		if t.ExpiresAt.Before(time.Now()) {
+			continue
+		}
+		return t, nil
+	}
+	return nil, pgx.ErrNoRows
+}
+
+func (s *stubAuthStore) LastPasswordResetSentAt(_ context.Context, _ uuid.UUID) (time.Time, error) {
+	return s.lastSentAt, nil
+}
+
+func (s *stubAuthStore) IncrementPasswordResetAttempts(_ context.Context, id uuid.UUID) (int, error) {
+	for _, t := range s.resetTokens {
+		if t.ID == id {
+			t.Attempts++
+			return t.Attempts, nil
+		}
+	}
+	return 0, pgx.ErrNoRows
+}
+
+func (s *stubAuthStore) ConsumePasswordResetToken(_ context.Context, id uuid.UUID) (bool, error) {
+	if _, done := s.consumedAt[id]; done {
+		return false, nil
+	}
+	s.consumedAt[id] = time.Now()
+	return true, nil
+}
+
+func (s *stubAuthStore) ExpirePasswordResetTokens(_ context.Context, userID uuid.UUID) error {
+	now := time.Now()
+	for _, t := range s.resetTokens {
+		if t.UserID != userID {
+			continue
+		}
+		if _, done := s.consumedAt[t.ID]; !done {
+			s.consumedAt[t.ID] = now
+		}
+	}
+	return nil
+}
+
 var _ AuthStore = (*stubAuthStore)(nil)
 
 func newTestHandler(userStore users.UserStore, authStore AuthStore) *Handler {
+	h, _ := newTestHandlerWithEmail(userStore, authStore)
+	return h
+}
+
+func newTestHandlerWithEmail(
+	userStore users.UserStore, authStore AuthStore,
+) (*Handler, *email.MockSender) {
 	cfg := &config.Config{GoogleClientID: "test-client-id"}
-	return NewHandler(userStore, authStore, newTestJWTService(), cfg)
+	sender := &email.MockSender{}
+	return NewHandler(userStore, authStore, newTestJWTService(), cfg, sender), sender
 }
 
 // newAuthApp wires the auth routes the same way routes.Register does, minus

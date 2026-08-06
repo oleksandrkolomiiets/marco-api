@@ -29,6 +29,7 @@ Cross-cutting packages (not domains):
 - `internal/middleware` — auth (JWT), CORS, logger, panic recovery, auth rate limiter.
 - `internal/marco` — Marco's persona: system prompt (`prompt.md`), user-context assembly from the DB, and parsers for inline tokens the model emits (`[LESSON_REF: …]`, `[MATCH_LOG: …]`, `[MATCH_PREP: …]`).
 - `internal/anthropic` — thin streaming client over the Anthropic SDK, plus `MockClient` for tests.
+- `internal/email` — thin SendGrid v3 sender (plain `net/http`, no SDK) for password-reset mail, plus `MockSender` for tests. Same shape as `internal/anthropic`.
 - `internal/config` — the only place `os.Getenv` is allowed.
 - `internal/seeder` — curriculum seeding shared by `cmd/seed`.
 
@@ -43,6 +44,8 @@ All `/api/v1/*` routes require `Authorization: Bearer <access_token>`. Auth endp
 | POST | `/auth/signup` `/auth/signin` | email+password auth |
 | POST | `/auth/refresh` | rotate refresh token, new access token |
 | POST | `/auth/signout` | revoke all refresh tokens |
+| POST | `/auth/forgot-password` | mail a 6-digit reset code (always 200, never reveals whether the address exists) |
+| POST | `/auth/reset-password` | exchange email + code + new password for a fresh session |
 | GET/PATCH | `/api/v1/me` | profile read/update |
 | GET | `/api/v1/lessons`, `/api/v1/lessons/:slug` | curriculum |
 | PATCH | `/api/v1/lessons/:slug/progress` | viewed/learned/mastered |
@@ -119,6 +122,10 @@ All `/api/v1/*` routes require `Authorization: Bearer <access_token>`. Auth endp
 | `JWT_ACCESS_TTL` | No | `15m` | Access-token lifetime (Go duration syntax) |
 | `JWT_REFRESH_TTL` | No | `720h` | Refresh-token lifetime |
 | `ANTHROPIC_API_KEY` | Yes | — | Claude API key for Marco chat |
+| `SENDGRID_API_KEY` | Yes | — | SendGrid key for password-reset email |
+| `SENDGRID_FROM_EMAIL` | Yes | — | Sender address; must be a verified Sender Identity or sends 403 |
+| `SENDGRID_FROM_NAME` | No | `Marco` | Display name on the From header |
+| `SENDGRID_BASE_URL` | No | `https://api.sendgrid.com` | Override the host; only for pointing local runs at a stand-in |
 
 The seeder (`cmd/seed`) only needs `DATABASE_URL` (plus optional `CURRICULUM_PATH`).
 
