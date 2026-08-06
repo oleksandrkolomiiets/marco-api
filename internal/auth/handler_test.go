@@ -327,6 +327,39 @@ func TestEmailSignIn_NormalizesEmail(t *testing.T) {
 	assert.Equal(t, fiber.StatusOK, status, "mixed-case email must reach the same account")
 }
 
+// Whether an email is registered must not be readable from the response. The
+// three rejection paths — unknown email, Google-only account, wrong password —
+// have to be byte-for-byte identical.
+func TestEmailSignIn_RejectionsAreIndistinguishable(t *testing.T) {
+	stores := map[string]*stubUserStore{
+		"unknown email": {},
+		"google-only": {byEmailFn: func(string) (*users.User, error) {
+			u := signInFixture(t, "secret123")
+			u.PasswordHash = nil
+			return u, nil
+		}},
+		"wrong password": {byEmailFn: func(string) (*users.User, error) {
+			return signInFixture(t, "secret123"), nil
+		}},
+	}
+
+	bodies := map[string]string{}
+	for name, store := range stores {
+		app := newAuthApp(newTestHandler(store, newStubAuthStore()), nil)
+		status, body := postJSON(t, app, "/auth/signin",
+			`{"email":"probe@example.com","password":"wrong9999"}`)
+
+		assert.Equal(t, fiber.StatusUnauthorized, status, name)
+		bodies[name] = body
+	}
+
+	assert.Equal(t, bodies["unknown email"], bodies["google-only"],
+		"a Google-only account must not be distinguishable from no account")
+	assert.Equal(t, bodies["unknown email"], bodies["wrong password"],
+		"a wrong password must not be distinguishable from an unregistered email")
+	assert.Contains(t, bodies["unknown email"], "do not match our records")
+}
+
 func TestEmailSignIn_Failures(t *testing.T) {
 	googleOnly := testUser(uuid.New(), "google@example.com") // PasswordHash nil
 
@@ -341,19 +374,19 @@ func TestEmailSignIn_Failures(t *testing.T) {
 			"unknown email",
 			&stubUserStore{},
 			`{"email":"ghost@example.com","password":"secret123"}`,
-			fiber.StatusUnauthorized, "no_account",
+			fiber.StatusUnauthorized, invalidCredentialsMessage,
 		},
 		{
 			"google-only account",
 			&stubUserStore{byEmailFn: func(string) (*users.User, error) { return googleOnly, nil }},
 			`{"email":"google@example.com","password":"secret123"}`,
-			fiber.StatusUnauthorized, "no_account",
+			fiber.StatusUnauthorized, invalidCredentialsMessage,
 		},
 		{
 			"wrong password",
 			&stubUserStore{byEmailFn: func(string) (*users.User, error) { return signInFixture(t, "secret123"), nil }},
 			`{"email":"olek@example.com","password":"wrong9999"}`,
-			fiber.StatusUnauthorized, "wrong_password",
+			fiber.StatusUnauthorized, invalidCredentialsMessage,
 		},
 		{
 			"missing fields",

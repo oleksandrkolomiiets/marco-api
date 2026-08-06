@@ -225,21 +225,46 @@ func (h *Handler) EmailSignIn(c *fiber.Ctx) error {
 
 	user, err := h.users.GetUserByEmail(c.Context(), req.Email)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "no_account"})
+		return credentialsRejected(c, req.Password)
 	}
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "internal server error"})
 	}
 	if user.PasswordHash == nil {
-		// account was created via Google — no password set
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "no_account"})
+		// Account was created via Google, so there is no password to check —
+		// answered the same way as a missing account so the two are
+		// indistinguishable from outside.
+		return credentialsRejected(c, req.Password)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(req.Password)); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "wrong_password"})
+		return credentialsRejected(c, "")
 	}
 
 	return h.issueTokens(c, user, true)
+}
+
+// invalidCredentialsMessage is the single answer to every failed sign-in. It
+// used to be "no_account" for an unknown email and "wrong_password" for a known
+// one, which let anyone probe which addresses are registered. Neutral wording,
+// after Laravel's auth.failed.
+const invalidCredentialsMessage = "These credentials do not match our records."
+
+// dummyPasswordHash equalises response time. A missing account skipped bcrypt
+// and answered in microseconds while a wrong password took ~60ms, so identical
+// wording still told an attacker which emails exist. Comparing against a fixed
+// hash makes both paths pay the same cost. Generated at bcrypt.DefaultCost, the
+// same cost sign-up uses; it hashes a value no one can sign in with.
+var dummyPasswordHash = []byte("$2a$10$Ov3kxx6/JOMgts6msQ.5TeZtl2YlSBftA.ZIxP4rJ89J06WwvW24e")
+
+// credentialsRejected answers a failed sign-in. Pass the submitted password when
+// no real hash was compared, so the burnt bcrypt round matches the timing of a
+// genuine mismatch; pass "" when a comparison already ran.
+func credentialsRejected(c *fiber.Ctx, unverifiedPassword string) error {
+	if unverifiedPassword != "" {
+		_ = bcrypt.CompareHashAndPassword(dummyPasswordHash, []byte(unverifiedPassword))
+	}
+	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": invalidCredentialsMessage})
 }
 
 // normalizeEmail lowercases and trims an email so lookups and the UNIQUE
