@@ -1,0 +1,33 @@
+cmd/qa/main_test.go
+  s_a0286b603db96d::t_85a7f93099b8da 1-125
+cmd/qa/main.go
+  s_a0286b603db96d::t_d776ab3f905e5e 160,232,256,266,431,434-438,441-442
+  s_a0286b603db96d::t_cb7b9625a24406 50
+  s_a0286b603db96d::t_442fdf4b56a1b8 354-377
+  s_a0286b603db96d::t_c7c391d14929e3 439-440
+  s_a0286b603db96d::t_45061e5a099df5 68
+  s_a0286b603db96d::t_9735cf10da60f9 82-86
+  s_a0286b603db96d::t_a74517b15e1889 40
+internal/config/config.go
+  s_a0286b603db96d::t_1be1f5066f0991 53-99
+internal/config/config_test.go
+  s_a0286b603db96d::t_2c3b50c274fc24 1-162
+Makefile
+  s_a0286b603db96d::t_5aaa18dd9f2e5e 85-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "c4d116f2765e238e195ec39d6fd3e8a57640acfc",
+  "prompts": {},
+  "sessions": {
+    "s_a0286b603db96d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9f9a3b6-798c-4807-93e4-49ee02242114",
+        "model": "claude-opus-5"
+      },
+      "human_author": "oleksandr-channext <oleksandr@channext.com>"
+    }
+  }
+}
