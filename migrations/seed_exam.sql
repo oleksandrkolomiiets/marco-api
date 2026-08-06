@@ -65,7 +65,7 @@ WITH q AS (
      'Defending deep, you let the ball bounce, then it bounces a SECOND time before you can return it. Call?',
      'FIP · Rule 13.1(c) · the ball bouncing a second time before it is returned loses the point.'),
     ('out-of-court-chase', 14, 'Rally · out of court',
-     'Their lob bounces in your court, then sails over the side glass and out of the cage. You sprint out the door and return it. Call?',
+     'Out-of-court play is allowed at your club. Their lob bounces in your court, then sails over the side glass and out of the cage. You sprint out the door and return it. Call?',
      'FIP · Rule 16 · leaving the court to play the ball is legal only where the court is built with the safety area for it.'),
     ('ceiling-clip', 15, 'Rally · ceiling',
      'Indoor club, low ceiling. Your lob clips the ceiling on the way over the net. Call?',
@@ -113,7 +113,7 @@ JOIN (VALUES
     ('bounce-first', 4, 'Good only on a second serve', FALSE),
     -- Q5
     ('fence-after-bounce', 1, 'Good — the bounce was in', FALSE),
-    ('fence-after-bounce', 2, 'Fault — on the serve, the ball must not touch the side fence', TRUE),
+    ('fence-after-bounce', 2, 'Fault — on the serve, the ball must not touch the metallic fence', TRUE),
     ('fence-after-bounce', 3, 'Let', FALSE),
     ('fence-after-bounce', 4, 'Point for you', FALSE),
     -- Q6
@@ -157,17 +157,17 @@ JOIN (VALUES
     ('double-bounce', 3, 'Replay', FALSE),
     ('double-bounce', 4, 'Let', FALSE),
     -- Q14
-    ('out-of-court-chase', 1, 'Good — out-of-court play is allowed once the ball has bounced inside', TRUE),
+    ('out-of-court-chase', 1, 'Good — it bounced in first, so you may play it from outside', TRUE),
     ('out-of-court-chase', 2, 'Out — once the ball leaves the cage, the point is dead', FALSE),
     ('out-of-court-chase', 3, 'Point for opponents — you can''t leave the court', FALSE),
     ('out-of-court-chase', 4, 'Let', FALSE),
     -- Q15
     ('ceiling-clip', 1, 'Good — the lob crossed', FALSE),
-    ('ceiling-clip', 2, 'Point for opponents — ceiling contact loses the point', TRUE),
+    ('ceiling-clip', 2, 'Point for opponents — it hit the ceiling before reaching their court', TRUE),
     ('ceiling-clip', 3, 'Replay if it was the first lob', FALSE),
     ('ceiling-clip', 4, 'Let', FALSE),
     -- Q16
-    ('reaching-over-net', 1, 'Good — the ball was returning to your side anyway', TRUE),
+    ('reaching-over-net', 1, 'Good — it bounced on your side, so you may follow it over', TRUE),
     ('reaching-over-net', 2, 'Point for opponents — you may not reach over the net', FALSE),
     ('reaching-over-net', 3, 'Replay', FALSE),
     ('reaching-over-net', 4, 'Let', FALSE),
