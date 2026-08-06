@@ -5,23 +5,38 @@
 -- goals, match_logs, messages, user_lesson_progress, refresh_tokens). Run it
 -- only against a local dev database. Never against staging or production.
 --
--- Lessons: the 5 beginner slugs the QA cases depend on are seeded here with
--- ON CONFLICT (slug) DO NOTHING so they survive a re-run AND don't overwrite
--- a richer seed_lessons.sql run that already populated them with full
--- cue_points / drill / etc. The titles MUST match seed_lessons.sql exactly —
--- Marco's prompt requires verbatim titles from the curriculum.
+-- Lessons: this file used to insert five of its own beginner lessons
+-- (ready-position, forehand-drive, backhand-drive, serve-basics,
+-- volley-intro) so the progress rows below had something to attach to. Those
+-- slugs came from an old seed_lessons.sql. The real curriculum replaced it
+-- with different slugs, so ON CONFLICT (slug) DO NOTHING never merged
+-- anything — it just added five extra lessons on every run.
+--
+-- The damage was quiet and cumulative: 35 lessons instead of 30, two
+-- different lessons claiming "beginner #1" (and #2 … #5) because
+-- (level, order_index) collided, phantom lessons with no tagline, no cues and
+-- no common mistake showing up in the app, and every lesson-count stat —
+-- progress, mastery rate, the Half Mastery achievement — computed over five
+-- lessons that were never part of the curriculum.
+--
+-- The progress rows now point at real curriculum lessons, which is what the
+-- note below sandra_intermediate always asked for. This file no longer
+-- creates lessons; `make seed` owns the curriculum.
 --
 -- Idempotent: re-running wipes prior user state and re-seeds cleanly.
 -- ============================================================================
 
-INSERT INTO lessons (slug, title, level, order_index, is_free, published)
-VALUES
-  ('ready-position', 'The Ready Position',         'beginner', 1, true, true),
-  ('forehand-drive', 'The Forehand Drive',         'beginner', 2, true, true),
-  ('backhand-drive', 'The Backhand Drive',         'beginner', 3, false, true),
-  ('serve-basics',   'The Padel Serve',            'beginner', 4, true, true),
-  ('volley-intro',   'Introduction to the Volley', 'beginner', 5, true, true)
-ON CONFLICT (slug) DO NOTHING;
+-- Fail loudly rather than silently attaching no progress. Every progress
+-- insert below is INSERT … SELECT, so without the curriculum they quietly
+-- insert nothing and the QA cases run against users whose lesson history is
+-- empty — which is exactly how the old fixtures rotted unnoticed.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM lessons WHERE slug = 'volley-basics-block-push') THEN
+        RAISE EXCEPTION
+            'curriculum not seeded: run `make seed` before `make qa`';
+    END IF;
+END $$;
 
 TRUNCATE TABLE users CASCADE;
 
@@ -50,15 +65,15 @@ INSERT INTO goals (user_id, description, status, created_at) VALUES
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '11111111-1111-1111-1111-111111111111', id, 'mastered', '2026-05-10 10:00:00+00'
-FROM lessons WHERE slug = 'volley-intro';
+FROM lessons WHERE slug = 'volley-basics-block-push';
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '11111111-1111-1111-1111-111111111111', id, 'learned', '2026-05-11 10:00:00+00'
-FROM lessons WHERE slug = 'forehand-drive';
+FROM lessons WHERE slug = 'forehand-groundstroke';
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '11111111-1111-1111-1111-111111111111', id, 'viewed', '2026-05-12 10:00:00+00'
-FROM lessons WHERE slug = 'ready-position';
+FROM lessons WHERE slug = 'ready-position-split-step';
 
 INSERT INTO match_logs (user_id, played, result, feeling, note, played_on) VALUES
   ('11111111-1111-1111-1111-111111111111', true, 'lost', 'frustrated', 'kept missing volleys at the net', DATE '2026-05-14');
@@ -102,11 +117,10 @@ INSERT INTO match_preparation (id, user_id, scheduled_at, opponents, partner_nam
 -- ---------------------------------------------------------------------------
 -- sandra_intermediate — right hand, left side, intermediate.
 -- Mastered bandeja_basics; completed vibora intro. Used by A2, E2.
--- Lesson slugs net_positioning_basics / volley_fundamentals from the spec do
--- not exist in seed_lessons.sql yet — we approximate with the closest seeded
--- lessons (volley-intro, ready-position) so progress rows can be inserted.
--- Marco's prompt sees the slug list; once real lessons are seeded with the
--- spec names, swap them in here.
+-- E2 checks Marco does not re-teach what she has mastered, so her mastered
+-- set is the beginner net and positioning work: asked "how do I get better at
+-- the net", the honest answer is an intermediate lesson such as
+-- net-domination-volley-patterns, not the volley basics she already owns.
 -- ---------------------------------------------------------------------------
 INSERT INTO users (id, google_id, email, display_name, skill_level, dominant_hand, court_side, play_frequency, goal, injury_notes, plan)
 VALUES (
@@ -128,15 +142,15 @@ INSERT INTO goals (user_id, description, status, created_at) VALUES
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '22222222-2222-2222-2222-222222222222', id, 'mastered', '2026-05-08 10:00:00+00'
-FROM lessons WHERE slug = 'volley-intro';
+FROM lessons WHERE slug = 'volley-basics-block-push';
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '22222222-2222-2222-2222-222222222222', id, 'mastered', '2026-05-09 10:00:00+00'
-FROM lessons WHERE slug = 'ready-position';
+FROM lessons WHERE slug = 'ready-position-split-step';
 
 INSERT INTO user_lesson_progress (user_id, lesson_id, status, updated_at)
 SELECT '22222222-2222-2222-2222-222222222222', id, 'learned', '2026-05-12 10:00:00+00'
-FROM lessons WHERE slug = 'forehand-drive';
+FROM lessons WHERE slug = 'forehand-groundstroke';
 
 -- ---------------------------------------------------------------------------
 -- lena_intermediate_left — right hand, left side, intermediate. Just won.

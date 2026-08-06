@@ -165,7 +165,9 @@ var Cases = []TestCase{
 		// Was "the chiquita shot", which the curriculum has carried as
 		// `the-chiquita` for a while now — Marco answered correctly with a real
 		// slug and the case could no longer catch a fabrication at all. The
-		// gancho is genuinely absent from all 35 lessons.
+		// gancho is genuinely absent from all 30 lessons. (This read 35 while
+		// this file's own fixtures were adding five phantom lessons to the
+		// curriculum on every run.)
 		UserMessage: "Do you have a lesson on the gancho?",
 		Notes: "There is no gancho lesson in available_lessons[]. Must NOT invent one — no [LESSON_REF: ...] " +
 			"with a made-up slug, and no confident \"yes we have that\". Either says it isn't in the curriculum, " +
